@@ -34,3 +34,12 @@ mint actions and three principal destinations. After using the first TestFlight
 build, Mark asked for a compact, easy-to-scan agent list with smaller badges.
 Prefer two-line rows, small symbols and inline status; the whole row opens the
 session. Keep full machine/project details available in the session view.
+
+
+## Shared workspace update
+The first destination is Workspaces. Mark can create a named group and include
+agents from multiple machines, with the same groups visible in desktop Herdr.
+Groups reference machine, session and terminal identity; they do not move files,
+credentials or running processes. All agents and machine views remain available.
+Creating a group is distinct from creating an execution workspace on one machine.
+Removing a group does not stop its agents. Selection remains local to each viewer.

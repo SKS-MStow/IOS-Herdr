@@ -1,5 +1,42 @@
 # Herdr iOS design QA
 
+## Build 3 candidate: shared workspaces
+
+Workspaces is now the first native tab, with All agents, Unassigned and named
+groups. Groups collect agents across machines using machine, session and terminal
+identity. The compact two-line agent rows, graphite/mint palette and native
+controls remain the design baseline. Group detail includes membership management
+and a machine-specific Start an agent flow.
+
+The finish reviewer requested updated navigation documentation and a demo label
+that remains visible while scrolling. `DESIGN.md` now records the implemented
+navigation. Workspaces, group detail and the membership picker prefix their
+native navigation titles with “Demo ·”, keeping sample identity visible while
+scrolling and at accessibility text sizes.
+
+| Check | Candidate evidence |
+| --- | --- |
+| iOS regression tests | Eight unit tests and seven UI tests passed in `build/SharedWorkspaces-verified-3.xcresult`. One opt-in live-pairing test was skipped. |
+| Demo-label follow-up | Three focused UI tests passed after the final native-title correction in `build/SharedWorkspaces-final-ui-3.xcresult`. |
+| Desktop checks | Full `just check` passed, including 3,124 Rust tests and Windows lint/docs checks. |
+| Final visual review | Independent reviewer: **ship**. Both material findings resolved; no remaining fixes. |
+
+The verified result supersedes `build/SharedWorkspaces-final-3.xcresult`, which
+included a failed accidental opt-in live-pairing run. The intermediate pinned
+demo-label capture was superseded because content could cover it. The skipped live test is
+not evidence of new pairing verification. Earlier build evidence below remains
+historical and does not establish physical-device acceptance of build 3.
+
+Live desktop QA created a temporary group, added/opened the Mac terminal,
+removed an unavailable member and collapsed/expanded the sidebar. A separate
+instance of the iPhone bridge saw the same group and its cross-machine members.
+Mac and Home PC were online; Home PC had no running agents at verification time.
+This establishes shared metadata and desktop navigation, not a new live Windows
+agent-start result.
+
+**Visual disposition: ship.** This record does not claim
+build 3 publication, TestFlight availability or installation.
+
 ## Build 2: compact agent list
 
 Mark’s physical-device feedback requested smaller agent badges and an easy list

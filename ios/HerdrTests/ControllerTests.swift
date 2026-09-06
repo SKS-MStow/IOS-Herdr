@@ -21,12 +21,32 @@ final class ControllerTests: XCTestCase {
         XCTAssertEqual(state.agents[0].statusLabel, "Status unknown")
         XCTAssertEqual(state.generatedAt.timeIntervalSince1970, 1788687000)
         XCTAssertFalse(state.notifications.configured)
+        XCTAssertNil(state.sharedWorkspaceCatalog)
     }
     func testAStaleMachineCannotBeShownAsConnected() {
         let machine = Machine(id: "m", name: "Mac", platform: "mac", state: "online", lastSeen: Date().addingTimeInterval(-120), error: nil, workspaces: [], panes: [])
         XCTAssertFalse(machine.isOnline)
         var agent = SampleData.agents[0]; agent.stale = true
         XCTAssertEqual(agent.statusLabel, "Last known state")
+    }
+    func testWorkspaceMembershipUsesMachineSessionAndTerminalIdentity() {
+        let agent = SampleData.agents[0]
+        let reference = SharedMember(agent: agent)
+        XCTAssertTrue(reference.matches(agent))
+        XCTAssertFalse(SharedMember(machineId: "mac", session: "shared", terminalId: agent.terminalId).matches(agent))
+        XCTAssertFalse(SharedMember(machineId: agent.machineId, session: "other", terminalId: agent.terminalId).matches(agent))
+        XCTAssertFalse(SharedMember(machineId: agent.machineId, session: "shared", terminalId: "replacement").matches(agent))
+    }
+    @MainActor func testDemoWorkspaceRemovalLeavesAgentsAndNotificationNavigationIntact() async throws {
+        let model = AppModel(); model.enableDemo(); model.pendingSharedChange = nil
+        let original = model.agents.map(\.id)
+        let id = try await model.changeSharedWorkspace("create", label: "Test")!
+        try await model.changeSharedWorkspace("add", id: id, member: SharedMember(agent: model.agents[0]))
+        try await model.changeSharedWorkspace("add", id: id, member: SharedMember(agent: model.agents[1]))
+        XCTAssertEqual(model.sharedWorkspace(id)?.members.count, 2)
+        try await model.changeSharedWorkspace("delete", id: id)
+        XCTAssertEqual(model.agents.map(\.id), original)
+        model.openAgent(original[1]); XCTAssertEqual(model.agentPath, [.agent(original[1])])
     }
     func testUncertainOperationIsNotPresentedAsSuccess() throws {
         let data = Data(#"{"id":"request","state":"uncertain","result":{"message":"Inspect the session","code":"unreachable"}}"#.utf8)
@@ -35,4 +55,19 @@ final class ControllerTests: XCTestCase {
         XCTAssertEqual(operation.message, "Inspect the session")
         XCTAssertNil(operation.result?.agentId)
     }
+    @MainActor func testDefinitiveWorkspaceRejectionClearsRecoveryButTransportFailureKeepsIt() throws {
+        let model = AppModel(); model.enableDemo()
+        let change = SharedChange(requestId: "rejected-name", expectedRevision: 0, action: "create", id: nil, label: String(repeating: "x", count: 129), member: nil)
+        model.pendingSharedChange = change
+        UserDefaults.standard.set(try JSONEncoder().encode(change), forKey: "pendingSharedChange")
+        model.clearDefinitivelyRejectedSharedChange(URLError(.timedOut))
+        XCTAssertNotNil(model.pendingSharedChange)
+        model.clearDefinitivelyRejectedSharedChange(APIError(message: "Try again later", code: "rate_limited"))
+        XCTAssertNotNil(model.pendingSharedChange)
+        model.clearDefinitivelyRejectedSharedChange(APIError(message: "Name too long", code: "invalid_request"))
+        XCTAssertNil(model.pendingSharedChange)
+        XCTAssertNil(UserDefaults.standard.data(forKey: "pendingSharedChange"))
+        XCTAssertTrue(model.canEditSharedWorkspaces)
+    }
+
 }

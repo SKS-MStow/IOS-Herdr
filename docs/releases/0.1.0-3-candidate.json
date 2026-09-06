@@ -1,0 +1,35 @@
+{
+  "version": "0.1.0",
+  "build": "3",
+  "status": "candidate_not_uploaded",
+  "verifiedAt": "2026-09-06T11:36:44.819510+00:00",
+  "bundleId": "xyz.verdalecres.herdr",
+  "ipaSha256": "207bd90206fda01175bcca9762c93adcc3c472caf78d5953d67b1a6989b738e2",
+  "signatureVerified": true,
+  "apsEnvironment": "production",
+  "debuggerAllowed": false,
+  "tests": {
+    "bridge": 13,
+    "iosUnit": 8,
+    "iosUI": 7,
+    "livePairingSkipped": true,
+    "finalFocusedUI": 3,
+    "rust": 3124,
+    "windowsCrossCompile": "passed",
+    "visualReview": "ship"
+  },
+  "sourceBranch": "codex/shared-workspace-groups",
+  "releaseGate": "One-time main/staging baseline initialization exception is awaiting user response; then follow PR staging and production promotion.",
+  "desktopRepo": "SKS-MStow/Herdr-Shared",
+  "desktopLiveQA": [
+    "create group",
+    "add Mac member",
+    "open matching terminal",
+    "remove unavailable Home PC reference",
+    "collapse and expand sidebar",
+    "bridge reads same catalog",
+    "temporary group removed"
+  ],
+  "homePC": "online with zero running agents at verification",
+  "publishedTestFlightBuildRemains": "2"
+}
