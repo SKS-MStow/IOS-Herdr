@@ -30,12 +30,17 @@ historical and does not establish physical-device acceptance of build 3.
 Live desktop QA created a temporary group, added/opened the Mac terminal,
 removed an unavailable member and collapsed/expanded the sidebar. A separate
 instance of the iPhone bridge saw the same group and its cross-machine members.
-Mac and Home PC were online; Home PC had no running agents at verification time.
-This establishes shared metadata and desktop navigation, not a new live Windows
-agent-start result.
+The first capture used an unavailable Home PC reference. On 7 September, a
+temporary Home PC Claude agent returned a reply-only prompt. A group containing
+that live Windows agent and an existing Mac agent appeared in the desktop and
+bridge. Selecting the Windows member opened its matching terminal and displayed
+the verified reply. The temporary group, worker execution workspace and bridge
+pairing were removed. The current desktop capture records this live mixed-machine
+check; existing agent terminal contents are omitted.
 
-**Visual disposition: ship.** This record does not claim
-build 3 publication, TestFlight availability or installation.
+**Visual disposition: ship.** Build 3 publication and TestFlight availability
+are verified separately in [the release record](docs/releases/0.1.0-3.json).
+Physical installation of build 3 remains unconfirmed.
 
 ## Build 2: compact agent list
 
