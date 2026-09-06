@@ -4,8 +4,16 @@ struct MainView: View {
     @EnvironmentObject private var model: AppModel
     var body: some View {
         TabView(selection: $model.selectedTab) {
-            NavigationStack(path: $model.agentPath) { AgentsView().navigationDestination(for: String.self) { SessionView(agentId: $0) } }
-                .tabItem { Label("Agents", systemImage: "person.2.fill") }.tag(0)
+            NavigationStack(path: $model.agentPath) {
+                SharedWorkspacesView().navigationDestination(for: AppRoute.self) { route in
+                    switch route {
+                    case .workspace(let id): SharedWorkspaceDetailView(workspaceId: id)
+                    case .agent(let id): SessionView(agentId: id)
+                    case .allAgents: AgentsView()
+                    case .unassigned: AgentsView(unassignedOnly: true)
+                    }
+                }
+            }.tabItem { Label("Workspaces", systemImage: "folder") }.tag(0)
             NavigationStack { InboxView() }.tabItem { Label("Inbox", systemImage: "bubble.left.and.bubble.right") }.badge(model.unreadCount).tag(1)
             NavigationStack { MachinesView() }.tabItem { Label("Machines", systemImage: "desktopcomputer") }.tag(2)
         }.tint(Theme.mint)
@@ -13,13 +21,14 @@ struct MainView: View {
 }
 
 struct AgentsView: View {
+    var unassignedOnly = false
     @EnvironmentObject private var model: AppModel
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var filter = "all"
     @State private var showSettings = false
     @State private var showNewAgent = false
     private var filtered: [Agent] {
-        model.agents.filter { filter == "all" || $0.machineId == filter }.sorted {
+        model.agents.filter { agent in (filter == "all" || agent.machineId == filter) && (!unassignedOnly || !model.isAssigned(agent)) }.sorted {
             let leftNeedsYou = $0.needsAttention && !$0.stale
             let rightNeedsYou = $1.needsAttention && !$1.stale
             if leftNeedsYou != rightNeedsYou { return leftNeedsYou }
@@ -55,14 +64,14 @@ struct AgentsView: View {
                     }.listRowSeparator(.hidden).listRowBackground(Theme.background)
                 } else {
                     ForEach(filtered) { agent in
-                        NavigationLink(value: agent.id) { AgentRow(agent: agent) }
+                        NavigationLink(value: AppRoute.agent(agent.id)) { AgentRow(agent: agent) }
                             .accessibilityIdentifier("agent-\(agent.id)")
                             .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
                             .listRowBackground(Theme.background)
                     }
                 }
             }.listStyle(.plain).scrollContentBackground(.hidden).refreshable { await model.refresh() }
-        }.herdrScreen().navigationTitle("Agents").navigationBarTitleDisplayMode(.inline)
+        }.herdrScreen().navigationTitle(unassignedOnly ? "Unassigned" : "Agents").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { Text("herdr").font(.headline).foregroundStyle(Theme.mint).fixedSize() }
                 ToolbarItem(placement: .topBarTrailing) {

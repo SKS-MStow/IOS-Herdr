@@ -5,6 +5,7 @@ struct Agent: Codable, Identifiable, Hashable {
     let machineId: String
     let machineName: String
     let terminalId: String
+    var session: String? = nil
     let paneId: String
     let workspaceId: String
     let workspace: String
@@ -39,7 +40,33 @@ struct Machine: Codable, Identifiable, Hashable {
 struct Workspace: Codable, Identifiable, Hashable { let id: String; let label: String; let paneCount: Int }
 struct Pane: Codable, Identifiable, Hashable { let id: String; let terminalId: String?; let cwd: String; let workspaceId: String }
 struct PushStatus: Codable { let configured: Bool; let lastError: String?; let topic: String }
-struct ControllerState: Codable { let generatedAt: Date; var machines: [Machine]; var agents: [Agent]; let notifications: PushStatus }
+struct SharedMember: Codable, Hashable, Identifiable {
+    let machineId: String
+    let session: String
+    let terminalId: String
+    var id: String { "\(machineId)/\(session)/\(terminalId)" }
+    func matches(_ agent: Agent) -> Bool { machineId == agent.machineId && terminalId == agent.terminalId && session == (agent.session ?? "shared") }
+    init(agent: Agent) { machineId = agent.machineId; session = agent.session ?? "shared"; terminalId = agent.terminalId }
+    init(machineId: String, session: String, terminalId: String) { self.machineId = machineId; self.session = session; self.terminalId = terminalId }
+}
+struct SharedWorkspace: Codable, Identifiable, Hashable { let id: String; var label: String; var members: [SharedMember] }
+struct SharedWorkspaceCatalog: Codable {
+    var available: Bool
+    var stale: Bool
+    var revision: Int
+    var workspaces: [SharedWorkspace]
+    var error: String? = nil
+}
+enum AppRoute: Hashable { case workspace(String), agent(String), allAgents, unassigned }
+struct SharedChange: Codable {
+    let requestId: String
+    let expectedRevision: Int
+    let action: String
+    let id: String?
+    let label: String?
+    let member: SharedMember?
+}
+struct ControllerState: Codable { let generatedAt: Date; var machines: [Machine]; var agents: [Agent]; let notifications: PushStatus; var sharedWorkspaceCatalog: SharedWorkspaceCatalog? = nil }
 struct InboxEvent: Codable, Identifiable, Hashable {
     let id: Int; let kind: String; let agentId: String?; let machineId: String; let title: String; let body: String; let createdAt: Date; var read: Bool
 }
@@ -53,7 +80,7 @@ struct Operation: Codable {
     let id: String; let state: String; let result: OperationResult?
     var message: String { result?.message ?? (state == "sending" ? "The controller is still processing this action." : "Delivery is uncertain. Read the session before sending again.") }
 }
-struct OperationResult: Codable { let message: String?; let code: String?; let agentId: String?; let machineId: String?; let paneId: String?; let workspaceId: String? }
+struct OperationResult: Codable { let message: String?; let code: String?; let agentId: String?; let machineId: String?; let paneId: String?; let workspaceId: String?; var sharedWorkspaceId: String? = nil }
 struct EmptyResponse: Codable {}
 struct APIError: LocalizedError {
     let message: String; let code: String
@@ -69,7 +96,14 @@ enum SampleData {
         Agent(id: "home/sample", machineId: "home", machineName: "Home PC", terminalId: "sample", paneId: "w1:p1", workspaceId: "w1", workspace: "Scratch", name: "home-pc-claude", kind: "claude", status: "blocked", cwd: "C:\\Users\\Mark\\Documents\\Herdr\\Scratch", sequence: 1, ready: true, stale: false, updatedAt: Date()),
         Agent(id: "mac/sample", machineId: "mac", machineName: "Mac", terminalId: "sample", paneId: "w1:p1", workspaceId: "w1", workspace: "Scratch", name: "mac-codex", kind: "codex", status: "working", cwd: "/Users/mark/Documents/Herdr/Scratch", sequence: 1, ready: true, stale: false, updatedAt: Date())
     ]
-    static var state: ControllerState { ControllerState(generatedAt: Date(), machines: [mac, home, pending], agents: agents, notifications: PushStatus(configured: false, lastError: nil, topic: "xyz.verdalecres.herdr")) }
+    static var state: ControllerState {
+        var state = ControllerState(generatedAt: Date(), machines: [mac, home, pending], agents: agents, notifications: PushStatus(configured: false, lastError: nil, topic: "xyz.verdalecres.herdr"))
+        state.sharedWorkspaceCatalog = SharedWorkspaceCatalog(available: true, stale: false, revision: 1, workspaces: [
+            SharedWorkspace(id: "sample-project", label: "Herdr updates", members: agents.map(SharedMember.init(agent:))),
+            SharedWorkspace(id: "sample-empty", label: "Next project", members: [])
+        ])
+        return state
+    }
     #if DEBUG
     static var compactListState: ControllerState {
         let examples = [

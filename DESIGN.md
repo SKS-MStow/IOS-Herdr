@@ -83,8 +83,9 @@ status never gets a separate large banner or action area in an agent row.
 ## Typography
 
 Use SF system text styles with Dynamic Type, rather than fixed font sizes.
-Agents uses an inline navigation title to leave room for the list. Other top-level
-destinations and pairing headlines use the native large-title hierarchy. Agent
+Workspaces, its group and agent lists, and the membership picker use inline
+navigation titles to leave room for content. Inbox, Machines and pairing
+headlines use the native large-title hierarchy. Agent
 names and grouped list names use `headline`; compact row metadata uses `footnote`
 and inline status uses `caption`. Supporting screens use `subheadline`, with
 `caption` and `footnote` for timestamps, path details and concise guidance.
@@ -97,7 +98,13 @@ including “Follow output”.
 
 ## Layout
 
-Agents uses a native plain List, small unfilled terminal symbols, full-width
+Workspaces starts with All agents and Unassigned, followed by named groups in a
+native plain List. Group rows show a headline name and a footnote summary of
+agent and machine counts. Group detail reuses the compact agent list; adding
+membership uses a searchable native list. At accessibility text sizes, the
+browse links omit decorative symbols so their labels can wrap.
+
+Agent lists use small unfilled terminal symbols, full-width
 row targets and native separators. Row insets are 16pt horizontally and 12pt
 vertically, with a 20pt symbol column and a 12pt content gap. Names and status
 share the first line; machine, provider and project share the second. The entire
@@ -105,8 +112,14 @@ row opens the session. Names may wrap to two lines. At accessibility text sizes,
 status moves below the name and metadata wraps. Decorative symbols and the
 agent count are omitted at accessibility sizes to give the text more room.
 
-The machine filter and a compact connection/count line stay above the scrolling
-list. The deferred Work laptop remains in Machines, where setup status belongs.
+In All agents and Unassigned, the machine filter and a compact connection/count
+line stay above the scrolling list. The deferred Work laptop remains in
+Machines, where setup status belongs.
+
+In demo mode, shared-workspace navigation titles begin with “Demo ·”. The native
+navigation bar keeps the qualifier visible while lists scroll, including at
+accessibility text sizes. Place this marker before the title so long names
+cannot hide the sample-data distinction.
 
 Session detail keeps machine and folder context above a scrolling output area.
 The key strip and multiline composer sit below the output. The output inset
@@ -134,9 +147,26 @@ lists, toolbar items and tab navigation keep their native shapes.
 
 ## Components
 
-- **Navigation:** Agents, Inbox and Machines are native tabs, each with a
-  navigation stack. Inbox carries the unread badge. Settings and Start an agent
-  open from the Agents toolbar as sheets. Keep destination titles visible.
+- **Navigation:** Workspaces, Inbox and Machines are native tabs, each with a
+  navigation stack. Workspaces opens All agents, Unassigned and named groups;
+  group and agent rows open their details. Inbox carries the unread badge.
+  Workspaces offers Create workspace and Settings in its toolbar. Settings and
+  Start an agent remain available from the agent-list toolbar as native sheets.
+  Keep destination titles visible.
+- **Shared workspace:** a named group uses compact rows and count summaries.
+  Group details retain the execution machine, provider and folder in each
+  available agent row. Unavailable saved members retain machine context and
+  explicitly say “Machine unavailable” or “Session ended”. Native menus, alerts
+  and swipe actions handle group management; deletion copy explains that agents
+  keep running on their machines.
+- **Membership picker:** search by agent or machine, then use the whole row to
+  add or remove membership. Mint plus/check symbols and Add/Remove accessibility
+  wording expose the current action. Preserve the compact agent-row identity.
+- **Start an agent:** a native form names the selected shared group when
+  entered from group detail, then asks where to run the agent. Keep “Run on”,
+  machine-specific folder guidance and provider selection explicit. Progress,
+  errors and recovery text distinguish creating an execution workspace,
+  starting an agent and finishing group membership.
 - **Machine filter:** a native segmented picker; selected segments use mint
   with dark text. Pending machines are not offered as active filters.
 - **Agent row:** name and inline status, then execution machine, provider and
@@ -152,12 +182,19 @@ lists, toolbar items and tab navigation keep their native shapes.
 - **Notices and confirmations:** a symbol and concise text explain errors or
   stale output. Uncertain delivery exposes “Check delivery” before further
   commands. Interruption and access changes use native confirmation dialogs.
-- **Demo states:** Agents and Inbox show “DEMO” in their toolbars. Session shows
-  “Sample output” and “Demo · commands are disabled”. Machines labels sample
-  connections. These labels must remain visible without hiding screen titles.
+- **Demo states:** Workspaces, group detail and the membership picker prefix
+  their navigation titles with “Demo ·”. Agent lists and Inbox show “DEMO”
+  in their toolbars.
+  Session shows “Sample output” and “Demo · commands are disabled”. Machines
+  labels sample connections. These labels must remain visible without hiding
+  screen titles.
 - **Empty and pending states:** use native `ContentUnavailableView` for empty
   agents, Inbox and unavailable sessions. Pending machines say “Setup pending”.
   Copy must reflect real connection and command state.
+
+**The demo continuity rule.** Scrolling through sample groups or membership
+choices must never remove the visible demo label. Keep offline, stale and saved
+member states explicit; sample activity is not evidence of a live connection.
 
 ## Do's and Don'ts
 

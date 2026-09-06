@@ -68,12 +68,12 @@ export function createApp(config, { store = new Store(config.databasePath), runt
     const identity = req.headers['tailscale-user-login'];
     return Boolean(config.allowedLogin && identity === config.allowedLogin && req.headers.host === new URL(config.publicURL).host);
   }
-  async function operation(device, body, work) {
+  async function operation(device, body, work, recoverMetadata = false) {
     uuid(body.requestId);
     let prior;
     try { prior = store.beginOperation(body.requestId, device.id, body); }
     catch (error) { throw new HTTPError(409, error.message, 'request_conflict'); }
-    if (prior) return prior;
+    if (prior && (!recoverMetadata || ['accepted', 'rejected'].includes(prior.state))) return prior;
     try { const result = await work(); store.finishOperation(body.requestId, 'accepted', result); }
     catch (error) { store.finishOperation(body.requestId, error.uncertain ? 'uncertain' : 'rejected', { message: error.message, code: error.code || 'runtime_error' }); }
     return store.operation(body.requestId, device.id);
@@ -165,6 +165,19 @@ export function createApp(config, { store = new Store(config.databasePath), runt
       if (req.method === 'POST' && url.pathname === '/api/workspaces') {
         const body = await readJSON(req); string(body.machineId, 'machine'); string(body.label, 'workspace label', 80); string(body.cwd, 'folder path', 1024);
         return json(res, 200, await operation(device, body, () => runtime.createWorkspace(body)));
+      }
+      if (req.method === 'POST' && url.pathname === '/api/shared-workspaces/change') {
+        const body = await readJSON(req);
+        if (!Number.isSafeInteger(body.expectedRevision) || body.expectedRevision < 0 || !['create', 'rename', 'delete', 'add', 'remove'].includes(body.action)) throw new HTTPError(400, 'Invalid workspace change.', 'invalid_request');
+        const input = { requestId: body.requestId, expectedRevision: body.expectedRevision, action: body.action };
+        if (body.action !== 'create') { string(body.id, 'shared workspace'); input.id = body.id; }
+        if (['create', 'rename'].includes(body.action)) { string(body.label, 'workspace name', 128); input.label = body.label; }
+        if (['add', 'remove'].includes(body.action)) {
+          const member = body.member || {};
+          string(member.machineId, 'machine'); string(member.terminalId, 'terminal', 128); string(member.session, 'session', 128);
+          input.member = { machineId: member.machineId, terminalId: member.terminalId, session: member.session };
+        }
+        return json(res, 200, await operation(device, { ...input, operation: 'shared-workspace-change' }, () => runtime.changeSharedWorkspace(input), true));
       }
       if (req.method === 'POST' && url.pathname === '/api/agents/start') {
         const body = await readJSON(req); string(body.machineId, 'machine'); string(body.paneId, 'pane');
