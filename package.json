@@ -1,0 +1,11 @@
+{
+  "name": "herdr-iphone-controller",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node bridge/server.mjs",
+    "test": "node --test bridge/test/*.test.mjs"
+  }
+}

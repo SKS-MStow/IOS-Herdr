@@ -1,0 +1,62 @@
+{
+  "version": "0.1.0",
+  "build": 2,
+  "bundleId": "xyz.verdalecres.herdr",
+  "verifiedOn": "2026-09-06",
+  "ipa": "build/Export/Herdr.ipa",
+  "ipaSha256": "a716c2cd58350380e81429ba6e64b92512256dcfa96ff364b9ecbbe8a2d3fcac",
+  "change": "Compact agent list with small symbols, inline status and full-row navigation",
+  "signing": {
+    "team": "V8W579ZBVB",
+    "apsEnvironment": "production",
+    "getTaskAllow": false,
+    "codesignVerified": true
+  },
+  "checks": {
+    "iosUnit": {
+      "passed": 5
+    },
+    "iosUI": {
+      "passed": 5,
+      "focusedFinalRecheckPassed": 3
+    },
+    "controller": {
+      "unchanged": true,
+      "previousEvidence": "docs/releases/0.1.0-1.json"
+    },
+    "reviewPageFromHomePC": 200
+  },
+  "distribution": {
+    "appId": "6809146693",
+    "betaGroupId": "538ff12a-979b-414d-af4e-cdd092e0745b",
+    "betaTesterId": "d18f06a1-05b6-46eb-8bf3-055088753755",
+    "uploaded": true,
+    "processing": "VALID",
+    "testFlightAvailable": true,
+    "lastAvailableBuild": 2,
+    "apnsKeyConfigured": true,
+    "productionPushRegistered": true,
+    "physicalPushVerified": true,
+    "physicalPushVerifiedOnBuild": 1,
+    "physicalPushEvidence": "User confirmed the alert appeared on the iPhone.",
+    "iPhoneInstalledBuild": 1,
+    "internalBuildState": "IN_BETA_TESTING",
+    "buildId": "04dba3dc-42de-4dcb-a844-3294441199a5",
+    "deliveryId": "04dba3dc-42de-4dcb-a844-3294441199a5",
+    "groupHasBuild": true,
+    "betaTesterCount": 1,
+    "betaBuildLocalizationId": "a5bb2b18-1b12-49d3-aa64-3e7d35a5540a",
+    "testNotesVerified": true,
+    "verifiedAt": "2026-09-06T10:27:42.114Z",
+    "expiresAt": "2026-12-05T02:24:27-08:00"
+  },
+  "evidence": [
+    "build/CompactList-2.xcresult",
+    "build/CompactList-final-2.xcresult",
+    "/tmp/herdr-build2-archive.log",
+    "/tmp/herdr-build2-upload.log",
+    "preview/native/agents.png",
+    "preview/native/accessibility.png",
+    "docs/releases/0.1.0-1.json"
+  ]
+}

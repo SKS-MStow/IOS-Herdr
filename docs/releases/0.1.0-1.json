@@ -1,0 +1,66 @@
+{
+  "version": "0.1.0",
+  "build": 1,
+  "bundleId": "xyz.verdalecres.herdr",
+  "verifiedOn": "2026-09-06",
+  "ipa": "build/Export/Herdr.ipa",
+  "ipaSha256": "c7541ac491a2f29f7471cad5fbbe454f90d25ac495eac3c0a6d22d6b35edacff",
+  "signing": {
+    "team": "V8W579ZBVB",
+    "apsEnvironment": "production",
+    "getTaskAllow": false,
+    "codesignVerified": true
+  },
+  "checks": {
+    "node": {
+      "passed": 9
+    },
+    "iosUnit": {
+      "passed": 5
+    },
+    "iosUI": {
+      "passed": 4,
+      "includesLivePairingAndRevocation": true
+    },
+    "liveAgentRoundTrip": [
+      "Mac Codex",
+      "Home PC Claude"
+    ],
+    "temporaryWorkspacesClosed": true,
+    "reviewPageFromHomePC": 200
+  },
+  "distribution": {
+    "uploaded": true,
+    "appRecordFound": true,
+    "apnsKeyConfigured": true,
+    "physicalPushVerified": true,
+    "deliveryId": "bd710e1c-c01e-4203-a9bd-1cc07775c04b",
+    "appId": "6809146693",
+    "betaGroupId": "538ff12a-979b-414d-af4e-cdd092e0745b",
+    "betaTesterId": "d18f06a1-05b6-46eb-8bf3-055088753755",
+    "processing": "VALID",
+    "internalBuildState": "IN_BETA_TESTING",
+    "testerState": "INSTALLED",
+    "testerCount": 1,
+    "groupHasBuild": true,
+    "testFlightAvailable": true,
+    "expirationDate": "2026-12-05T02:03:10-08:00",
+    "verifiedAt": "2026-09-06T10:12:33.985Z",
+    "invitationRequestId": "86c6b63c-2c38-4148-b8fe-73fb060ed8ab",
+    "invitationVisibleToUser": true,
+    "iPhonePaired": true,
+    "productionPushRegistered": true,
+    "apnsAcceptedTest": true,
+    "apnsTestId": "AEE75103-EC79-5419-2486-9E1243BFA8C2",
+    "apnsTestSentAt": "2026-09-06T10:11:52.908Z",
+    "physicalPushEvidence": "User confirmed: yeah i got it. it worked fine."
+  },
+  "evidence": [
+    "build/ReviewFixes.xcresult",
+    "build/InboxFix.xcresult",
+    "build/LiveNative.xcresult",
+    "/tmp/herdr-live-smoke-fixed.log",
+    "/tmp/herdr-final-archive.log",
+    "/tmp/herdr-testflight-upload.log"
+  ]
+}
