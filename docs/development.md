@@ -12,7 +12,7 @@ demo input, pairing defaults and stale attention labels.
 
 Live pairing is explicitly separate. Build the tests, launch the unpaired app
 on a simulator, then run only
-`HerdrUITests/HerdrUITests/testPreparedLivePairing` with `test-without-building`.
+`HerdrUITests/HerdrUITests/testPreparedLivePairing` with `test-without-building` and `TEST_RUNNER_HERDR_LIVE_PAIRING_TEST=1`.
 While it waits, run:
 
 ```sh
@@ -99,6 +99,9 @@ the phone pairing and push delivery were verified on build 1. See
 ## Release boundaries
 
 No secrets, signing material, generated build artifacts, logs or runtime
-databases belong in Git. The initial implementation is uncommitted in this
-checkout. No shared branch has been pushed or repository PR merged. Follow
-Mark’s PR-first release instructions when a repository release is requested.
+databases belong in Git. The build 2 baseline is committed on
+`codex/iphone-mockup-review`. Shared workspace changes use
+`codex/shared-workspace-groups`. Release through a PR to `staging`, verify the
+candidate, then promote by PR to `main`. Both repositories began without shared
+branches; their baseline initialization requires the one-time exception already
+requested from Mark before that PR flow can start.

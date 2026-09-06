@@ -22,9 +22,10 @@ HTTPS, without Funnel or public internet exposure.
    your connection and notification settings carry over.
 2. On the iPhone, open the pairing page and create a one-use code. Tap **Open
    Herdr and connect**, then **Connect to Mac**. Codes expire after ten minutes.
-3. Choose an agent under **Agents** to read its current terminal screen and send
-   input. The machine name identifies where each action runs. A new workspace
-   needs an existing absolute folder path on that machine.
+3. Build 3 adds **Workspaces**: create a group, add existing Mac or Home PC agents,
+   and open any agent to read its terminal or send input. **All agents** remains
+   available. Starting a new agent requires an existing folder on its execution
+   machine; creating a shared group does not.
 4. In **Settings**, enable notifications, choose alert types and send a test
    notification. This requires an APNs key on the controller. Apple accepting
    a notification is separate from the alert appearing on the phone.
@@ -68,3 +69,12 @@ holder is its only tester. Build 1 was installed on the iPhone, paired and
 registered for production push; Mark confirmed that its test alert arrived.
 Installation of build 2 on the phone has not yet been confirmed. See
 [the verification record](docs/release-status.json) for evidence and timestamps.
+
+
+## Shared workspace candidate
+
+Build 3 adds the same named, mixed-machine groups to desktop Herdr and the
+phone. Desktop source is in [Herdr-Shared](https://github.com/SKS-MStow/Herdr-Shared),
+a separate private fork. See [the workspace contract](docs/shared-workspaces.md).
+Build 2 remains the published TestFlight release until the candidate's release
+record confirms otherwise.

@@ -16,6 +16,8 @@
 		43B50218D676FD3E05FFA2E2 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = EFCAAE03EC6F9D98488E16D2 /* PrivacyInfo.xcprivacy */; };
 		6847059073D5FEAF6AC77E27 /* HerdrApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E14AF6D0A6385079036A627 /* HerdrApp.swift */; };
 		779A3AC65B95445C0ACA8FAE /* ControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9441F07F89D0FFD7BADA83FA /* ControllerTests.swift */; };
+		7A5CE957A0A4889F8EACC8CC /* SharedWorkspacesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49DB1E66795FBFF37631AC6F /* SharedWorkspacesView.swift */; };
+		87D21A26AA63FBB562E57391 /* SharedWorkspaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEA67733610556C05C8629CE /* SharedWorkspaces.swift */; };
 		914D3836EC7D797EA7FBE0C5 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6579FC066D8605302E5DC127 /* Keychain.swift */; };
 		B545E5B7BA0D677E9B8FE828 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74ABD11D8E8873D778B955D8 /* Theme.swift */; };
 		B6097FB32E81C1B72AAC75A6 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDF1434A3818B594DAE1A60E /* AppModel.swift */; };
@@ -46,6 +48,7 @@
 		23983556FD760783F1F9BE3C /* NewAgentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAgentView.swift; sourceTree = "<group>"; };
 		2E14AF6D0A6385079036A627 /* HerdrApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HerdrApp.swift; sourceTree = "<group>"; };
 		3EF8483D5F61AF650FE94ADE /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		49DB1E66795FBFF37631AC6F /* SharedWorkspacesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedWorkspacesView.swift; sourceTree = "<group>"; };
 		54552D259D7FEF6394D6796B /* HerdrTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HerdrTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		59D86B6E2D7626044B84083F /* HerdrUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HerdrUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6225B1A74C5896F3FFFB7B2E /* Herdr.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Herdr.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -60,6 +63,7 @@
 		9DAA2C3F1186939A4663B78B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C09148CD7C3AF9652720C3D5 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		CB69E788A8BCC983FD2904C3 /* HerdrUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HerdrUITests.swift; sourceTree = "<group>"; };
+		EEA67733610556C05C8629CE /* SharedWorkspaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedWorkspaces.swift; sourceTree = "<group>"; };
 		EFCAAE03EC6F9D98488E16D2 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		FDF1434A3818B594DAE1A60E /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -104,6 +108,7 @@
 				FDF1434A3818B594DAE1A60E /* AppModel.swift */,
 				6DBC8B9EF94503C9FEC1CD98 /* ControllerClient.swift */,
 				6579FC066D8605302E5DC127 /* Keychain.swift */,
+				EEA67733610556C05C8629CE /* SharedWorkspaces.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -134,6 +139,7 @@
 				22C693C53BAD7E2F6EA02167 /* PairView.swift */,
 				9AEB305D7A7321738DBC6E05 /* SessionView.swift */,
 				73A22EF008761AD1F04A52BF /* SettingsView.swift */,
+				49DB1E66795FBFF37631AC6F /* SharedWorkspacesView.swift */,
 				74ABD11D8E8873D778B955D8 /* Theme.swift */,
 			);
 			path = Views;
@@ -276,6 +282,8 @@
 				035EC2CA06050D48AF43AF98 /* PairView.swift in Sources */,
 				E0A26B5C53207303D056521A /* SessionView.swift in Sources */,
 				06EEC2FDE75AEB9A4AEA5040 /* SettingsView.swift in Sources */,
+				87D21A26AA63FBB562E57391 /* SharedWorkspaces.swift in Sources */,
+				7A5CE957A0A4889F8EACC8CC /* SharedWorkspacesView.swift in Sources */,
 				B545E5B7BA0D677E9B8FE828 /* Theme.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -347,7 +355,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = V8W579ZBVB;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -503,7 +511,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = V8W579ZBVB;
 				ENABLE_NS_ASSERTIONS = NO;

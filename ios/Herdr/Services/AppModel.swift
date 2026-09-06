@@ -10,13 +10,15 @@ import UserNotifications
     @Published var error: String?
     @Published var isDemo = false
     @Published var selectedTab = 0
-    @Published var agentPath: [String] = []
+    @Published var agentPath: [AppRoute] = []
     @Published var pending: [String: String] = [:]
     @Published var notificationPermission = "Not enabled"
     @Published var settings: DeviceSettings?
     @Published var pairingServer = "https://marks-macbook-air.tail79ccb5.ts.net:8443"
     @Published var pairingCode = ""
     @Published var showPairing = false
+    @Published var sharedBusy = false
+    @Published var pendingSharedChange: SharedChange?
     private var refreshing = false
     var client: ControllerClient? { connection.map { ControllerClient(connection: $0) } }
     var hasSession: Bool { connection != nil || isDemo }
@@ -27,6 +29,7 @@ import UserNotifications
 
     init() {
         connection = Keychain.load()
+        if let data = UserDefaults.standard.data(forKey: "pendingSharedChange") { pendingSharedChange = try? JSONDecoder().decode(SharedChange.self, from: data) }
         if let connection { pairingServer = connection.serverURL }
         pending = UserDefaults.standard.dictionary(forKey: "pendingOperations") as? [String: String] ?? [:]
         #if DEBUG
@@ -46,6 +49,7 @@ import UserNotifications
         let result: PairResponse = try await temporary.request("/api/pair", method: "POST", body: ["code": pairingCode, "name": UIDevice.current.name])
         let newConnection = Connection(serverURL: url.absoluteString, deviceId: result.deviceId, token: result.token)
         try Keychain.save(newConnection)
+        clearSharedWorkspaceRecovery()
         connection = newConnection; pairingCode = ""; isDemo = false; showPairing = false; agentPath = []; state = nil; events = []; error = nil
         pending = [:]; savePending()
         await refresh(); await registerSavedPushToken()
@@ -73,12 +77,12 @@ import UserNotifications
         guard let client else { throw APIError(message: "Pair your iPhone first.", code: "unpaired") }
         return try await client.request("/api/agents/\(ControllerClient.agentPath(id))/output")
     }
-    func perform(path: String, scope: String, body: [String: Any]) async throws -> Operation {
+    func perform(path: String, scope: String, body: [String: Any], retainAccepted: Bool = false) async throws -> Operation {
         if isDemo { throw APIError(message: "This is sample data. Pair with your Mac to send real commands.", code: "demo") }
         guard connected, let client else { throw APIError(message: "Reconnect to the Mac before sending.", code: "offline") }
         if let requestID = pending[scope] {
             let existing: Operation = try await client.request("/api/operations/\(requestID)")
-            if existing.state == "accepted" || existing.state == "rejected" { clearPending(scope) }
+            if (existing.state == "accepted" && !retainAccepted) || existing.state == "rejected" { clearPending(scope) }
             return existing
         }
         let requestID = UUID().uuidString.lowercased()
@@ -86,7 +90,7 @@ import UserNotifications
         var payload = body; payload["requestId"] = requestID
         do {
             let result: Operation = try await client.request(path, method: "POST", body: payload)
-            if result.state == "accepted" || result.state == "rejected" { clearPending(scope) }
+            if (result.state == "accepted" && !retainAccepted) || result.state == "rejected" { clearPending(scope) }
             return result
         } catch {
             if let apiError = error as? APIError, ["invalid_request", "unauthorized", "rate_limited", "origin", "request_conflict"].contains(apiError.code) { clearPending(scope); throw error }
@@ -142,8 +146,8 @@ import UserNotifications
         let _: EmptyResponse = try await client.request("/api/device", method: "DELETE")
         forgetConnection()
     }
-    func forgetConnection() { Keychain.clear(); connection = nil; state = nil; events = []; settings = nil; connected = false; error = nil; agentPath = []; pending = [:]; savePending() }
-    func openAgent(_ id: String) { selectedTab = 0; agentPath = [id] }
+    func forgetConnection() { clearSharedWorkspaceRecovery(); Keychain.clear(); connection = nil; state = nil; events = []; settings = nil; connected = false; error = nil; agentPath = []; pending = [:]; savePending() }
+    func openAgent(_ id: String) { selectedTab = 0; agentPath = [.agent(id)] }
     func receivePairLink(_ url: URL) {
         guard url.scheme == "herdr-shared", url.host == "pair", let parts = URLComponents(url: url, resolvingAgainstBaseURL: false),
               let server = parts.queryItems?.first(where: { $0.name == "server" })?.value,

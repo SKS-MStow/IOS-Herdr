@@ -13,7 +13,9 @@ export function cleanEnvironment() {
 export class Runtime {
   constructor(config, store, runner = execute) {
     this.config = config; this.store = store; this.runner = runner; this.machines = []; this.agents = [];
+    this.catalogReadGeneration = 0; this.catalogAppliedGeneration = 0;
     this.refreshing = null; this.machineLocks = new Map();
+    this.sharedWorkspaceCatalog = { available: false, stale: true, revision: 0, workspaces: [] };
   }
   async command(machine, args, { text = false, mutation = false, timeout = 20000 } = {}) {
     const argv = ['--session', 'shared'];
@@ -30,7 +32,7 @@ export class Runtime {
       let known;
       try { known = JSON.parse(error.stderr || error.stdout || '').error; } catch {}
       if (known) {
-        const safeRejections = ['agent_blocked', 'agent_not_found', 'pane_not_found', 'invalid_params', 'agent_busy'];
+        const safeRejections = ['agent_blocked', 'agent_not_found', 'pane_not_found', 'invalid_params', 'agent_busy', 'workspace_conflict', 'workspace_missing', 'request_conflict', 'workspace_rejected'];
         throw new RuntimeError(known.message, known.code, mutation && !safeRejections.includes(known.code));
       }
       throw new RuntimeError(mutation ? 'Delivery could not be confirmed. Inspect the session before sending again.' : 'This machine could not be reached.', 'unreachable', mutation);
@@ -50,6 +52,7 @@ export class Runtime {
     return this.refreshing;
   }
   async refreshAll() {
+    const catalogRead = this.refreshSharedWorkspaces();
     let machines;
     try { machines = await this.discover(); }
     catch { machines = this.machines.filter(item => item.id !== 'work-laptop'); if (!machines.length) machines = [{ id: 'mac', name: 'Mac', remote: false, platform: 'mac' }]; }
@@ -74,12 +77,13 @@ export class Runtime {
     this.machines = snapshots.map(s => s.machine);
     this.machines.push({ id: 'work-laptop', name: 'Work laptop', platform: 'windows', state: 'pending', lastSeen: null, error: 'STO-WKS-113 needs its Herdr worker setup.', workspaces: [], panes: [], remote: true });
     this.agents = snapshots.flatMap(s => s.agents);
+    await catalogRead;
   }
   normalizeAgent(machine, agent, snapshot) {
     const workspace = snapshot.workspaces.find(w => w.workspace_id === agent.workspace_id);
     const tab = snapshot.tabs.find(t => t.tab_id === agent.tab_id);
     return { id: `${machine.id}/${agent.terminal_id}`, machineId: machine.id, machineName: machine.name,
-      terminalId: agent.terminal_id, paneId: agent.pane_id, workspaceId: agent.workspace_id,
+      terminalId: agent.terminal_id, session: machine.session || 'shared', paneId: agent.pane_id, workspaceId: agent.workspace_id,
       workspace: workspace?.label || 'Workspace', name: agent.name || tab?.label || agent.terminal_title_stripped?.replace(/^[^\p{L}\p{N}]+/u, '') || `${agent.agent || 'Agent'} · ${agent.pane_id}`,
       kind: agent.agent || 'unknown', status: agent.agent_status || 'unknown', cwd: agent.foreground_cwd || agent.cwd || '',
       sequence: agent.state_change_seq || 0, ready: Boolean(agent.interactive_ready), stale: false, updatedAt: now() };
@@ -96,7 +100,26 @@ export class Runtime {
     if (previous && previous !== machine.state) this.store.addEvent({ kind: 'connection', machineId: machine.id,
       title: machine.state === 'online' ? 'Machine reconnected' : 'Machine disconnected', body: machine.name });
   }
-  state() { return { generatedAt: now(), machines: this.machines.map(({ target, enabled, session, remote, ...machine }) => machine), agents: this.agents }; }
+  state() { return { generatedAt: now(), machines: this.machines.map(({ target, enabled, session, remote, ...machine }) => machine), agents: this.agents, sharedWorkspaceCatalog: this.sharedWorkspaceCatalog }; }
+  async refreshSharedWorkspaces() {
+    const generation = ++this.catalogReadGeneration;
+    try {
+      const catalog = await this.command({ remote: false }, ['shared-workspace', 'list']);
+      if (!Array.isArray(catalog?.workspaces) || !Number.isSafeInteger(catalog.revision)) throw new Error('Unsupported catalog');
+      if (catalog.revision < this.sharedWorkspaceCatalog.revision || generation < this.catalogAppliedGeneration) return;
+      this.catalogAppliedGeneration = generation;
+      this.sharedWorkspaceCatalog = { ...catalog, available: true, stale: false };
+    } catch {
+      if (generation < this.catalogAppliedGeneration) return;
+      this.catalogAppliedGeneration = generation;
+      this.sharedWorkspaceCatalog = { ...this.sharedWorkspaceCatalog, stale: true, error: 'Shared workspaces are unavailable. Check the Mac controller.' };
+    }
+  }
+  async changeSharedWorkspace(input) {
+    const result = await this.command({ remote: false }, ['shared-workspace', 'apply', JSON.stringify(input)], { mutation: true });
+    await this.refreshSharedWorkspaces();
+    return { ...result, message: 'Workspace updated.' };
+  }
   async resolve(id) {
     await this.refresh();
     const agent = this.agents.find(a => a.id === id);

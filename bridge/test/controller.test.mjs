@@ -18,6 +18,7 @@ function fixture() {
     assert.equal(binary, config.herdrPath); assert.equal(options.shell, undefined);
     const args = argv.slice(2);
     if (args[0] === 'machine' && args[1] === 'list') return { stdout: '' };
+    if (args[0] === 'shared-workspace' && args[1] === 'list') return { stdout: JSON.stringify({ result: state.catalog || { revision: 0, workspaces: [] } }) };
     if (state.offline) throw new Error('offline');
     let result;
     if (args[0] === 'api') result = { snapshot: { version: 'test', agents: [agent()], workspaces: [{ workspace_id: 'w1', label: 'Scratch', pane_count: 1 }], tabs: [], panes: [{ pane_id: 'w1:p1', terminal_id: state.terminal, cwd: '/tmp/scratch', workspace_id: 'w1' }] } };
@@ -150,4 +151,76 @@ test('HTTP authentication, cross-origin protection, command deduplication, and d
     assert.equal((await request('/api/settings', { token })).data.push.configured, false);
     await request('/api/device', { method: 'DELETE', token }); assert.equal((await request('/api/state', { token })).status, 401);
   } finally { await new Promise(resolve => app.server.close(resolve)); store.close(); }
+});
+
+test('shared catalog is additive, reflects desktop edits, and retains stale membership', async () => {
+  const { runtime, state, store } = fixture();
+  state.catalog = { revision: 3, workspaces: [{ id: 'group', label: 'Website', members: [
+    { machineId: 'mac', session: 'shared', terminalId: 'term-1' },
+    { machineId: '0123456789abcdef0123456789abcdef', session: 'shared', terminalId: 'term-1' }
+  ] }] };
+  await runtime.refresh();
+  assert.equal(runtime.state().sharedWorkspaceCatalog.workspaces[0].members.length, 2);
+  assert.equal(runtime.agents[0].workspaceId, 'w1');
+  state.catalog.workspaces[0].label = 'Renamed on desktop'; state.catalog.revision++;
+  await runtime.refresh(); assert.equal(runtime.state().sharedWorkspaceCatalog.workspaces[0].label, 'Renamed on desktop');
+  runtime.runner = async () => { throw new Error('controller unavailable'); };
+  await runtime.refresh();
+  assert.equal(runtime.state().sharedWorkspaceCatalog.stale, true);
+  assert.equal(runtime.state().sharedWorkspaceCatalog.workspaces[0].members.length, 2);
+  assert.equal(runtime.agents[0].stale, true);
+  store.close();
+});
+
+test('metadata retry recovers an interrupted receipt and cannot become a different command', async () => {
+  const { runtime, store } = fixture();
+  const app = createApp(config, { runtime, store }); app.server.listen(0, '127.0.0.1'); await once(app.server, 'listening');
+  const pair = store.pair(store.pairCode().code, 'Test phone');
+  const body = { requestId: randomUUID(), expectedRevision: 0, action: 'create', label: 'Website' };
+  const fingerprint = { ...body, operation: 'shared-workspace-change' };
+  store.beginOperation(body.requestId, pair.deviceId, fingerprint);
+  store.finishOperation(body.requestId, 'uncertain', { message: 'bridge restarted' });
+  let calls = 0;
+  runtime.changeSharedWorkspace = async input => { calls++; assert.deepEqual(input, body); return { sharedWorkspaceId: 'stable-group', revision: 1 }; };
+  const send = async payload => {
+    const r = await fetch(`http://127.0.0.1:${app.server.address().port}/api/shared-workspaces/change`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${pair.token}` }, body: JSON.stringify(payload) });
+    return { status: r.status, data: await r.json() };
+  };
+  try {
+    assert.equal((await send(body)).data.result.sharedWorkspaceId, 'stable-group');
+    assert.equal((await send(body)).data.state, 'accepted'); assert.equal(calls, 1);
+    assert.equal((await send({ ...body, action: 'delete', id: 'different' })).status, 409);
+    assert.equal(calls, 1);
+  } finally { await new Promise(resolve => app.server.close(resolve)); store.close(); }
+});
+
+
+test('overlapping catalog reads cannot undo newer state or mark it stale', async () => {
+  const { runtime, store } = fixture();
+  const reads = [];
+  runtime.command = () => new Promise((resolve, reject) => reads.push({ resolve, reject }));
+  const first = runtime.refreshSharedWorkspaces();
+  const second = runtime.refreshSharedWorkspaces();
+  reads[1].resolve({ revision: 2, workspaces: [{ id: 'group', label: 'New name', members: [] }] });
+  await second;
+  reads[0].resolve({ revision: 1, workspaces: [{ id: 'group', label: 'Old name', members: [] }] });
+  await first;
+  assert.equal(runtime.state().sharedWorkspaceCatalog.revision, 2);
+  assert.equal(runtime.state().sharedWorkspaceCatalog.workspaces[0].label, 'New name');
+  const older = runtime.refreshSharedWorkspaces();
+  const newer = runtime.refreshSharedWorkspaces();
+  reads[3].resolve({ revision: 3, workspaces: [] }); await newer;
+  reads[2].reject(new Error('old connection failed')); await older;
+  assert.equal(runtime.state().sharedWorkspaceCatalog.stale, false);
+  store.close();
+});
+
+
+test('catalog storage failure stays uncertain while intrinsic mutation rejection is final', async () => {
+  const { runtime, store } = fixture();
+  for (const [code, uncertain] of [['shared_workspace_error', true], ['workspace_rejected', false]]) {
+    runtime.runner = async () => { const error = new Error('CLI failed'); error.stdout = JSON.stringify({ error: { code, message: 'Catalog write result' } }); throw error; };
+    await assert.rejects(runtime.command({ remote: false }, ['shared-workspace', 'apply', '{}'], { mutation: true }), error => error.code === code && error.uncertain === uncertain);
+  }
+  store.close();
 });
