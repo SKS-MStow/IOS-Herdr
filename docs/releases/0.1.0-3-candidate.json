@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
   "build": "3",
-  "status": "candidate_not_uploaded",
+  "status": "published",
   "verifiedAt": "2026-09-06T11:36:44.819510+00:00",
   "bundleId": "xyz.verdalecres.herdr",
   "ipaSha256": "207bd90206fda01175bcca9762c93adcc3c472caf78d5953d67b1a6989b738e2",
@@ -19,7 +19,7 @@
     "visualReview": "ship"
   },
   "sourceBranch": "codex/shared-workspace-groups",
-  "releaseGate": "One-time main/staging baseline initialization exception is awaiting user response; then follow PR staging and production promotion.",
+  "releaseGate": "Completed through staging and main PRs; production and TestFlight verification is recorded in 0.1.0-3.json.",
   "desktopRepo": "SKS-MStow/Herdr-Shared",
   "desktopLiveQA": [
     "create group",
@@ -31,5 +31,27 @@
     "temporary group removed"
   ],
   "homePC": "online with zero running agents at verification",
-  "publishedTestFlightBuildRemains": "2"
+  "additionalLiveVerification": {
+    "verifiedAt": "2026-09-06T22:35:00.447Z",
+    "checks": [
+      "Home PC reply-only agent prompt verified",
+      "One shared group contains live Mac and Home PC agents",
+      "Desktop viewer confirmed both live members and opened Home PC pane"
+    ]
+  },
+  "githubValidation": {
+    "desktopFeaturePR": "https://github.com/SKS-MStow/Herdr-Shared/pull/3",
+    "desktopChecks": "passed",
+    "windowsTests": 2857,
+    "windowsFullChecks": "passed with 30-minute job allowance",
+    "linuxRetry": "Unchanged terminal-close test passed on retry; all Linux checks passed.",
+    "iosStagingPR": "https://github.com/SKS-MStow/IOS-Herdr/pull/1",
+    "iosProductionPR": "https://github.com/SKS-MStow/IOS-Herdr/pull/2",
+    "iosChecks": "passed"
+  },
+  "desktopBinarySha256": "67bac925ea4afd6ecf019a0aaa839752751473c54c84aaff8fd7af3221ae05f6",
+  "desktopBinaryVersion": "herdr 0.8.2-workstations.20260906.workspaces.1",
+  "desktopImplementationCommit": "b74ef6de35caf7b9dc3a93119122e3f2008d14b5",
+  "iphoneImplementationCommit": "2b9c56c0229411c8b557f710363805098d8ad298",
+  "releaseRecord": "0.1.0-3.json"
 }
