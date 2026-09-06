@@ -30,7 +30,7 @@ Do not export pairing-form screenshots containing a code.
 - Team: `V8W579ZBVB`
 - SKU: `herdr-ios-mark`
 - Primary language: English (Australia)
-- Version: 0.1.0; build: 2
+- Version: 0.1.0; build: 3
 - Push Notifications enabled on the registered bundle identifier
 
 App Store Connect app ID: `6809146693`. The app record, developer bundle ID
@@ -103,5 +103,14 @@ databases belong in Git. The build 2 baseline is committed on
 `codex/iphone-mockup-review`. Shared workspace changes use
 `codex/shared-workspace-groups`. Release through a PR to `staging`, verify the
 candidate, then promote by PR to `main`. Both repositories began without shared
-branches; their baseline initialization requires the one-time exception already
-requested from Mark before that PR flow can start.
+branches. Mark approved the one-time baseline initialization on 7 September 2026;
+subsequent changes follow the staging and main PR workflow.
+
+## Shared workspace release
+
+Build 0.1.0 (3) is available in Mark's internal TestFlight group. The desktop
+controller and bridge are deployed from their main release branches, following
+staging and production PRs. Apple processing, group membership, test notes,
+signing and live controller verification are recorded in `releases/0.1.0-3.json`.
+Phone pairing and production push registration carry over. Physical installation
+of build 3 has not yet been confirmed.

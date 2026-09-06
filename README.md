@@ -18,7 +18,7 @@ HTTPS, without Funnel or public internet exposure.
 
 ## Using the app
 
-1. Install or update to **Herdr Shared 0.1.0 (2)** in TestFlight. If already paired,
+1. Install or update to **Herdr Shared 0.1.0 (3)** in TestFlight. If already paired,
    your connection and notification settings carry over.
 2. On the iPhone, open the pairing page and create a one-use code. Tap **Open
    Herdr and connect**, then **Connect to Mac**. Codes expire after ten minutes.
@@ -62,19 +62,21 @@ See [development and release](docs/development.md), [controller operations](docs
 
 ## Current release state
 
-Version 0.1.0 (2) is available for internal TestFlight testing with a compact
-agent list, small symbols, inline status and full-row navigation. Apple reports
-`VALID` and `IN_BETA_TESTING`; the Mark group includes this build and the account
-holder is its only tester. Build 1 was installed on the iPhone, paired and
-registered for production push; Mark confirmed that its test alert arrived.
-Installation of build 2 on the phone has not yet been confirmed. See
-[the verification record](docs/release-status.json) for evidence and timestamps.
+Version 0.1.0 (3) is available in the Mark internal TestFlight group. Apple
+reports `VALID` and `IN_BETA_TESTING`, and the group contains only the account
+holder. The matching desktop controller and iPhone bridge are deployed. Existing
+phone pairing and push registration were preserved; the running agent servers
+were not restarted. Physical installation of build 3 remains unconfirmed.
 
+A live check grouped an existing Mac agent with a temporary Home PC Claude
+agent, opened the matching Windows terminal, and verified its reply-only output.
+The temporary group, worker workspace and test pairing were removed. See
+[the verification record](docs/release-status.json).
 
-## Shared workspace candidate
+## Shared workspaces
 
 Build 3 adds the same named, mixed-machine groups to desktop Herdr and the
 phone. Desktop source is in [Herdr-Shared](https://github.com/SKS-MStow/Herdr-Shared),
 a separate private fork. See [the workspace contract](docs/shared-workspaces.md).
-Build 2 remains the published TestFlight release until the candidate's release
-record confirms otherwise.
+Reopen `herdr-multi` to use the new desktop sidebar. Existing official Herdr
+installs and the Home PC worker are preserved.
