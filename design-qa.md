@@ -106,3 +106,13 @@ image-file selection as a second entry point. Composer previews include remove
 controls, machine-specific upload progress and persistent unsent photo drafts.
 Synthetic-image verification succeeded with live Mac/Codex and Windows/Claude.
 Output remains a live terminal-screen read, not reconstructed chat history.
+
+## Styled terminal output and preview links (build 5)
+
+The user's phone screenshot showed uncoloured command output and terminal-width
+rulers wrapping over many lines. The new renderer retains ANSI colours/emphasis,
+removes ruler noise in reading mode and makes ordinary/OSC HTTP links tappable.
+Native captures verify green/red change lines, bold headings, underlined links,
+local-link handling and a page opened inside Safari. Accessibility XXXL remains
+scrollable. Live Mac and Home PC previews passed HTTPS, redirect, WebSocket and
+restart/cleanup verification. Full history is not implied by a screen read.

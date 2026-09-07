@@ -3,6 +3,20 @@ import UIKit
 @testable import Herdr
 
 final class ControllerTests: XCTestCase {
+    func testStyledOutputCompactsRulesAndPreservesLinksAndCodeIndentation() {
+        let runs = [TerminalRun(text: "Title\n", color: "#8AB4F8", bold: true), TerminalRun(text: String(repeating: "─", count: 120) + "\n    code()   \n\n\nhttps://example.com/path?q=1\n"), TerminalRun(text: "Open", link: "https://example.com/other")]
+        let output = SessionOutput(agentId: "a", text: runs.map(\.text).joined(), readAt: Date(), source: "visible", sequence: 1, runs: runs)
+        let rich = TerminalText.attributed(output, monospaced: false)
+        XCTAssertFalse(String(rich.characters).contains("─"))
+        XCTAssertTrue(String(rich.characters).contains("    code()"))
+        XCTAssertTrue(rich.runs.contains { $0.link?.absoluteString == "https://example.com/path?q=1" })
+        XCTAssertTrue(rich.runs.contains { $0.link?.absoluteString == "https://example.com/other" })
+        XCTAssertTrue(String(TerminalText.attributed(output, monospaced: true).characters).contains("─"))
+        XCTAssertNil(TerminalText.safeURL("javascript:alert(1)"))
+        XCTAssertTrue(TerminalText.isLocal(URL(string: "http://localhost:5173")!))
+        XCTAssertFalse(TerminalText.isLocal(URL(string: "https://example.com")!))
+    }
+
     func testPhotoPreparationRejectsInvalidDataAndBoundsImageSize() throws {
         XCTAssertThrowsError(try SessionPhoto.prepare(Data("not an image".utf8)))
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: 4000, height: 1000))

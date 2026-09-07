@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { now } from './store.mjs';
+import { terminalDocument } from './terminal-output.mjs';
 
 const execute = promisify(execFile);
 export class RuntimeError extends Error {
@@ -134,8 +135,8 @@ export class Runtime {
     const { agent, machine, current } = await this.resolve(id);
     // Alternate-screen history capture scrolls the worker and is unavailable while busy.
     // A phone refresh reads the visible terminal screen without scrolling it.
-    const text = await this.command(machine, ['agent', 'read', agent.paneId, '--source', 'visible', '--lines', String(lines), '--format', 'text'], { text: true });
-    return { agentId: id, text, readAt: now(), source: 'visible', sequence: current.state_change_seq || 0 };
+    const ansi = await this.command(machine, ['agent', 'read', agent.paneId, '--source', 'visible', '--lines', String(lines), '--format', 'ansi'], { text: true });
+    return { agentId: id, ...terminalDocument(ansi), readAt: now(), source: 'visible', sequence: current.state_change_seq || 0 };
   }
   async locked(id, work) {
     const previous = this.machineLocks.get(id) || Promise.resolve();

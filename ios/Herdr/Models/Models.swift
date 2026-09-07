@@ -73,7 +73,7 @@ struct InboxEvent: Codable, Identifiable, Hashable {
 struct InboxResponse: Codable { let events: [InboxEvent] }
 struct Preferences: Codable, Equatable { var attention = true; var completion = true; var connection = true; var previews = false }
 struct DeviceSettings: Codable { let preferences: Preferences; let push: PushStatus; let pushRegistered: Bool; let deviceId: String }
-struct SessionOutput: Codable { let agentId: String; let text: String; let readAt: Date; let source: String; let sequence: Int }
+struct SessionOutput: Codable { let agentId: String; let text: String; let readAt: Date; let source: String; let sequence: Int; var runs: [TerminalRun]? = nil }
 struct PairResponse: Codable { let deviceId: String; let token: String }
 struct Connection: Codable { let serverURL: String; let deviceId: String; let token: String }
 struct Operation: Codable {
