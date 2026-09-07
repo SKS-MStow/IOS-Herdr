@@ -30,7 +30,7 @@ Do not export pairing-form screenshots containing a code.
 - Team: `V8W579ZBVB`
 - SKU: `herdr-ios-mark`
 - Primary language: English (Australia)
-- Version: 0.1.0; build: 3
+- Version: 0.1.0; build: 4
 - Push Notifications enabled on the registered bundle identifier
 
 App Store Connect app ID: `6809146693`. The app record, developer bundle ID
@@ -114,3 +114,12 @@ staging and production PRs. Apple processing, group membership, test notes,
 signing and live controller verification are recorded in `releases/0.1.0-3.json`.
 Phone pairing and production push registration carry over. Physical installation
 of build 3 has not yet been confirmed.
+
+## Session reading and photo release
+
+Build 0.1.0 (4) is available in Mark's internal TestFlight group. The bridge
+accepts photo uploads through the existing Tailscale HTTPS endpoint. Native
+photo selection and live image recognition on Mac and Home PC were verified.
+Existing pairings and agents were preserved; no worker binary update is needed.
+See `releases/0.1.0-4.json` for evidence and `session-photos.md` for usage and limits.
+Physical installation of build 4 has not yet been confirmed.
