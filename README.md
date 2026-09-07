@@ -78,10 +78,10 @@ Physical installation of build 5 remains unconfirmed. See
 
 ## Context across phone chats
 
-Every normal message from the iPhone automatically includes shared Herdr
-instructions for Codex and Claude: phone-friendly output, preview links, photos
-and the execution machine. This also covers existing sessions and the next
-message after clearing a chat. See [scope and editing](docs/agent-context.md).
+Codex and Claude agents started from the iPhone load the shared Herdr instructions
+once through native startup settings. Normal messages contain only your text;
+photos add their execution-machine paths. Existing running agents need a fresh
+launch to adopt the startup settings. See [scope and editing](docs/agent-context.md).
 
 ## Shared workspaces
 
