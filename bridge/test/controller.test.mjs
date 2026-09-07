@@ -21,7 +21,7 @@ function fixture() {
     if (args[0] === 'shared-workspace' && args[1] === 'list') return { stdout: JSON.stringify({ result: state.catalog || { revision: 0, workspaces: [] } }) };
     if (state.offline) throw new Error('offline');
     let result;
-    if (args[0] === 'api') result = { snapshot: { version: 'test', agents: [agent()], workspaces: [{ workspace_id: 'w1', label: 'Scratch', pane_count: 1 }], tabs: [], panes: [{ pane_id: 'w1:p1', terminal_id: state.terminal, cwd: '/tmp/scratch', workspace_id: 'w1' }] } };
+    if (args[0] === 'api') result = { snapshot: { version: 'test', agents: state.empty ? [] : [agent()], workspaces: [{ workspace_id: 'w1', label: 'Scratch', pane_count: 1 }], tabs: [], panes: [{ pane_id: 'w1:p1', terminal_id: state.terminal, cwd: '/tmp/scratch', workspace_id: 'w1' }] } };
     else if (args[0] === 'agent' && args[1] === 'get') result = { agent: agent() };
     else if (args[0] === 'agent' && args[1] === 'read') { assert.equal(args[4], 'visible'); return { stdout: 'Example output\n' }; }
     else { state.writes.push(args); result = { agent: agent() }; }
@@ -63,9 +63,7 @@ test('prompt data is passed literally and reads never change the selected deskto
   const { runtime, state, store } = fixture(); await runtime.refresh();
   const text = 'Describe $HOME; $(touch /tmp/not-executed) "quoted"\nsecond line';
   await runtime.action('mac/term-1', { type: 'prompt', text });
-  assert.deepEqual(state.writes[0].slice(0, 3), ['agent', 'prompt', 'w1:p1']);
-  assert.ok(state.writes[0][3].startsWith('[Herdr phone context v1]'));
-  assert.ok(state.writes[0][3].endsWith('\n\n' + text));
+  assert.deepEqual(state.writes, [['agent', 'prompt', 'w1:p1', text]]);
   const output = await runtime.output('mac/term-1'); assert.equal(output.text, 'Example output\n'); assert.equal(output.sequence, 1);
   assert.ok(!state.writes.flat().includes('focus')); store.close();
 });
@@ -253,4 +251,18 @@ test('HTTP photos require pairing, reach the prompt once, and reject cross-devic
     const rejected = await send(base + '/actions', { ...action, requestId: randomUUID() }, other.token);
     assert.equal(rejected.data.state, 'rejected'); assert.equal(state.writes.length, 1);
   } finally { await new Promise(r => app.server.close(r)); store.close(); rmSync(root, { recursive: true }); }
+});
+
+
+test('phone agent creation passes native context only at launch', async () => {
+  const { runtime, state, store } = fixture();
+  state.empty = true;
+  try {
+    await runtime.startAgent({ machineId: 'mac', paneId: 'w1:p1', name: 'new-agent', kind: 'codex' });
+    assert.equal(state.writes.length, 1);
+    const launch = state.writes[0];
+    assert.deepEqual(launch.slice(-3, -1), ['--', '-c']);
+    assert.ok(launch.at(-1).startsWith('developer_instructions='));
+    assert.ok(JSON.parse(launch.at(-1).slice('developer_instructions='.length)).includes('Herdr'));
+  } finally { store.close(); }
 });
