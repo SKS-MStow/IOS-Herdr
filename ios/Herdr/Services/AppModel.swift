@@ -73,7 +73,21 @@ import UserNotifications
         }
     }
     func output(for id: String) async throws -> SessionOutput {
-        if isDemo { return SessionOutput(agentId: id, text: "> Describe this folder.\n\nThis is your Scratch workspace.\n\nA safe place to try prompts before opening a project.\n\nWhat would you like to work on next?", readAt: Date(), source: "sample", sequence: 1) }
+        if isDemo {
+            let runs = [
+                TerminalRun(text: "Preview ready\n", color: "#A8D5A2", bold: true),
+                TerminalRun(text: "The layout is updated. Open the preview to check it on your phone.\n\n"),
+                TerminalRun(text: String(repeating: "─", count: 120) + "\n"),
+                TerminalRun(text: "Changes\n", bold: true),
+                TerminalRun(text: "+ Added a compact agent list\n", color: "#A8D5A2"),
+                TerminalRun(text: "− Removed oversized badges\n", color: "#F28B82"),
+                TerminalRun(text: "\nPrivate preview\n", bold: true),
+                TerminalRun(text: "http://localhost:5173/\n", color: "#8AB4F8"),
+                TerminalRun(text: "\nOpen the Herdr screenshots", link: "http://100.103.121.43:8765/"),
+                TerminalRun(text: "\n\nReady for your feedback.", dim: true)
+            ]
+            return SessionOutput(agentId: id, text: runs.map(\.text).joined(), readAt: Date(), source: "sample", sequence: 1, runs: runs)
+        }
         guard let client else { throw APIError(message: "Pair your iPhone first.", code: "unpaired") }
         return try await client.request("/api/agents/\(ControllerClient.agentPath(id))/output")
     }

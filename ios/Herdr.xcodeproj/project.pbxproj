@@ -11,9 +11,11 @@
 		06EEC2FDE75AEB9A4AEA5040 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73A22EF008761AD1F04A52BF /* SettingsView.swift */; };
 		0827D8F343EA885C8EC5D3C2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9DAA2C3F1186939A4663B78B /* Assets.xcassets */; };
 		0B01E7E938F3D7F87DCE8EB5 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = C09148CD7C3AF9652720C3D5 /* Models.swift */; };
+		0F5399FC629ECFEE563973A7 /* TerminalText.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9768FB98D4DF7F7C4069B06 /* TerminalText.swift */; };
 		25DDFC9B3D6900417B6430F0 /* HerdrUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB69E788A8BCC983FD2904C3 /* HerdrUITests.swift */; };
 		26F3084B878B7F270E301252 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EF8483D5F61AF650FE94ADE /* MainView.swift */; };
 		43B50218D676FD3E05FFA2E2 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = EFCAAE03EC6F9D98488E16D2 /* PrivacyInfo.xcprivacy */; };
+		65BCE575F4AF7E4B89CD6DD8 /* PrivatePreviewsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6AC57589A40D79847F74D52 /* PrivatePreviewsView.swift */; };
 		6847059073D5FEAF6AC77E27 /* HerdrApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E14AF6D0A6385079036A627 /* HerdrApp.swift */; };
 		779A3AC65B95445C0ACA8FAE /* ControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9441F07F89D0FFD7BADA83FA /* ControllerTests.swift */; };
 		7A5CE957A0A4889F8EACC8CC /* SharedWorkspacesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49DB1E66795FBFF37631AC6F /* SharedWorkspacesView.swift */; };
@@ -63,7 +65,9 @@
 		9441F07F89D0FFD7BADA83FA /* ControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControllerTests.swift; sourceTree = "<group>"; };
 		9AEB305D7A7321738DBC6E05 /* SessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionView.swift; sourceTree = "<group>"; };
 		9DAA2C3F1186939A4663B78B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B9768FB98D4DF7F7C4069B06 /* TerminalText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalText.swift; sourceTree = "<group>"; };
 		C09148CD7C3AF9652720C3D5 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		C6AC57589A40D79847F74D52 /* PrivatePreviewsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivatePreviewsView.swift; sourceTree = "<group>"; };
 		CB69E788A8BCC983FD2904C3 /* HerdrUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HerdrUITests.swift; sourceTree = "<group>"; };
 		EEA67733610556C05C8629CE /* SharedWorkspaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedWorkspaces.swift; sourceTree = "<group>"; };
 		EFCAAE03EC6F9D98488E16D2 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -139,10 +143,12 @@
 				3EF8483D5F61AF650FE94ADE /* MainView.swift */,
 				23983556FD760783F1F9BE3C /* NewAgentView.swift */,
 				22C693C53BAD7E2F6EA02167 /* PairView.swift */,
+				C6AC57589A40D79847F74D52 /* PrivatePreviewsView.swift */,
 				3237D31FF26931D675232B5E /* SessionAttachments.swift */,
 				9AEB305D7A7321738DBC6E05 /* SessionView.swift */,
 				73A22EF008761AD1F04A52BF /* SettingsView.swift */,
 				49DB1E66795FBFF37631AC6F /* SharedWorkspacesView.swift */,
+				B9768FB98D4DF7F7C4069B06 /* TerminalText.swift */,
 				74ABD11D8E8873D778B955D8 /* Theme.swift */,
 			);
 			path = Views;
@@ -283,11 +289,13 @@
 				0B01E7E938F3D7F87DCE8EB5 /* Models.swift in Sources */,
 				C04771454CC258BAA408C000 /* NewAgentView.swift in Sources */,
 				035EC2CA06050D48AF43AF98 /* PairView.swift in Sources */,
+				65BCE575F4AF7E4B89CD6DD8 /* PrivatePreviewsView.swift in Sources */,
 				A7E13178F0C6C14FA475F6D6 /* SessionAttachments.swift in Sources */,
 				E0A26B5C53207303D056521A /* SessionView.swift in Sources */,
 				06EEC2FDE75AEB9A4AEA5040 /* SettingsView.swift in Sources */,
 				87D21A26AA63FBB562E57391 /* SharedWorkspaces.swift in Sources */,
 				7A5CE957A0A4889F8EACC8CC /* SharedWorkspacesView.swift in Sources */,
+				0F5399FC629ECFEE563973A7 /* TerminalText.swift in Sources */,
 				B545E5B7BA0D677E9B8FE828 /* Theme.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -359,7 +367,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = V8W579ZBVB;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -515,7 +523,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = V8W579ZBVB;
 				ENABLE_NS_ASSERTIONS = NO;

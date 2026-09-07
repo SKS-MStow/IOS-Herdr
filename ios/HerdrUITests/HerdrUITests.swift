@@ -65,6 +65,25 @@ final class HerdrUITests: XCTestCase {
         capture("23-session-landscape", app: app)
         XCUIDevice.shared.orientation = .portrait
     }
+    func testRichOutputHasTappableLinksAndOpensBrowser() {
+        let app = XCUIApplication(); app.launchArguments = ["--demo"]; app.launch()
+        app.buttons["All agents"].tap(); app.buttons["agent-mac/sample"].tap()
+        XCTAssertTrue(app.buttons["Pause output to read"].waitForExistence(timeout: 10))
+        app.buttons["Pause output to read"].tap()
+
+        let local = app.links["http://localhost:5173/"]
+        XCTAssertTrue(local.waitForExistence(timeout: 5))
+        local.tap()
+        XCTAssertTrue(app.alerts["Session update"].waitForExistence(timeout: 5))
+        app.alerts.buttons["OK"].tap()
+        capture("30-rich-output", app: app)
+        let preview = app.links["Open the Herdr screenshots"]
+        XCTAssertTrue(preview.exists); preview.tap()
+        XCTAssertTrue(app.buttons["Close"].waitForExistence(timeout: 10))
+        capture("31-in-app-browser", app: app)
+        app.buttons["Close"].tap()
+        XCTAssertTrue(app.buttons["Attachments and terminal keys"].exists)
+    }
     func testPairingStartsWithSendDisabled() throws {
         let app = XCUIApplication(); app.launchArguments = []; app.launch()
         if !app.textFields["controllerURL"].waitForExistence(timeout: 5) { throw XCTSkip("The simulator already has a paired controller.") }
