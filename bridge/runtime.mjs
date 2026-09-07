@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { now } from './store.mjs';
 import { terminalDocument } from './terminal-output.mjs';
+import { phonePrompt } from './agent-context.mjs';
 
 const execute = promisify(execFile);
 export class RuntimeError extends Error {
@@ -150,7 +151,7 @@ export class Runtime {
       if (action.type === 'prompt') {
         if (current.agent_status === 'blocked') throw new RuntimeError('This agent is waiting at a question or approval. Read its output and use the response controls.', 'agent_blocked');
         if (action.imagePaths?.length && !['codex', 'claude'].includes(agent.kind)) throw new RuntimeError('This agent does not support photo messages.', 'invalid_attachment');
-        const message = action.imagePaths?.length ? `${action.text || 'Describe the attached images.'}\n\nAttached images are stored on this computer. Open each image file with your image-reading tool before answering:\n${action.imagePaths.map(path => JSON.stringify(path)).join('\n')}` : action.text;
+        const message = phonePrompt(action, agent, machine, current);
         await this.command(machine, ['agent', 'prompt', agent.paneId, message], { mutation: true, timeout: 15000 });
       } else {
         // Key input must match the status snapshot the person actually reviewed.
