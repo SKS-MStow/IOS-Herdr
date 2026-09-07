@@ -18,7 +18,7 @@ HTTPS, without Funnel or public internet exposure.
 
 ## Using the app
 
-1. Install or update to **Herdr Shared 0.1.0 (4)** in TestFlight. If already paired,
+1. Install or update to **Herdr Shared 0.1.0 (5)** in TestFlight. If already paired,
    your connection and notification settings carry over.
 2. On the iPhone, open the pairing page and create a one-use code. Tap **Open
    Herdr and connect**, then **Connect to Mac**. Codes expire after ten minutes.
@@ -27,7 +27,10 @@ HTTPS, without Funnel or public internet exposure.
    available. Starting a new agent requires an existing folder on its execution
    machine; creating a shared group does not.
 4. In a session, **Pause** holds the output while you read. The **aA** menu offers
-   monospaced text and reading options. Tap **+** to attach up to three photos
+   the original terminal layout and reading options. Output preserves colours and
+   emphasis; tap a link to open it inside the app. Localhost development links
+   open through private Tailscale HTTPS on the agent’s machine.
+   [Private preview details](docs/rich-output-and-previews.md). Tap **+** to attach up to three photos
    from Photos or Files to a Codex or Claude prompt. [Photo details](docs/session-photos.md).
 5. In **Settings**, enable notifications, choose alert types and send a test
    notification. This requires an APNs key on the controller. Apple accepting
@@ -65,15 +68,12 @@ See [development and release](docs/development.md), [controller operations](docs
 
 ## Current release state
 
-Version 0.1.0 (3) is available in the Mark internal TestFlight group. Apple
-reports `VALID` and `IN_BETA_TESTING`, and the group contains only the account
-holder. The matching desktop controller and iPhone bridge are deployed. Existing
-phone pairing and push registration were preserved; the running agent servers
-were not restarted. Physical installation of build 3 remains unconfirmed.
-
-A live check grouped an existing Mac agent with a temporary Home PC Claude
-agent, opened the matching Windows terminal, and verified its reply-only output.
-The temporary group, worker workspace and test pairing were removed. See
+Version 0.1.0 (5) is available in the Mark internal TestFlight group. Apple
+reports `VALID` and `IN_BETA_TESTING`, with only the account holder enrolled.
+The production bridge is deployed. Existing phone pairing and agents were
+preserved. Private HTTPS previews were verified from the Home PC, including
+Mac and Windows backends, redirects, WebSockets and restart restoration.
+Physical installation of build 5 remains unconfirmed. See
 [the verification record](docs/release-status.json).
 
 ## Shared workspaces

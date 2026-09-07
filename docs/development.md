@@ -30,7 +30,7 @@ Do not export pairing-form screenshots containing a code.
 - Team: `V8W579ZBVB`
 - SKU: `herdr-ios-mark`
 - Primary language: English (Australia)
-- Version: 0.1.0; build: 4
+- Version: 0.1.0; build: 5
 - Push Notifications enabled on the registered bundle identifier
 
 App Store Connect app ID: `6809146693`. The app record, developer bundle ID
@@ -123,3 +123,17 @@ photo selection and live image recognition on Mac and Home PC were verified.
 Existing pairings and agents were preserved; no worker binary update is needed.
 See `releases/0.1.0-4.json` for evidence and `session-photos.md` for usage and limits.
 Physical installation of build 4 has not yet been confirmed.
+
+## Coloured output and private previews
+
+Build 0.1.0 (5) is available in Mark's internal TestFlight group. Terminal colours,
+emphasis and links are preserved; reading mode compacts terminal rules. Public
+links open in an in-app browser. Localhost links prepare a private Tailscale HTTPS
+preview for the selected machine without starting its development server.
+
+Twenty-two bridge tests and ten native unit tests passed. Native UI checks
+verified both link types, browser return and accessibility text. Live Mac and
+Home PC checks covered redirects, WebSockets, retries and restart restoration.
+Staging and production verification preserved existing pairings and Serve routes.
+See `releases/0.1.0-5.json` and `rich-output-and-previews.md`. Physical installation
+of build 5 has not yet been confirmed.
