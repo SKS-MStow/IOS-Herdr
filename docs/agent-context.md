@@ -1,38 +1,47 @@
-# Shared context for phone chats
+# Session instructions for phone agents
 
-Every normal prompt sent through the iPhone bridge includes the instructions in
-[`bridge/agent-context.md`](../bridge/agent-context.md), followed by the selected
-machine, provider, terminal and current working directory. The user's text and
-execution-machine photo paths follow unchanged. Edit that single file and
-release the bridge to update the behavior for every phone chat.
+When the phone starts a Codex or Claude agent, the bridge supplies
+[`bridge/agent-context.md`](../bridge/agent-context.md) once through the provider's
+native startup settings, together with its execution-machine identity:
 
-This works with both Codex and Claude, for new agents and already-running
-sessions. It is supplied on each normal message, so resuming, switching or
-clearing a conversation does not depend on the previous conversation remembering
-Herdr. Existing request receipts still prevent duplicate delivery. No iPhone
-build or worker update is required.
+- Codex: `-c developer_instructions=...` (additional developer instructions).
+- Claude: `--append-system-prompt ...` (appended system instructions).
 
-The context covers concise phone output, clickable URLs, private Tailscale
-preview behavior, execution-machine photo paths, mixed-machine workspaces and
-Mark's default PR-first release workflow. Machine metadata is refreshed and
-encoded separately from the maintained instructions; no credentials or other
-agents' conversations are included.
+Normal phone messages contain exactly the user's text. Photo messages append
+only the image paths required for that particular request. There are no repeated
+context blocks, short reminders, or per-message machine metadata. Native slash
+commands, approval responses and key input remain literal. Request receipts
+still prevent duplicate delivery.
 
-## Boundaries
+The provider retains the instructions as session context, rather than Herdr
+adding another copy on every turn. They still occupy a fixed amount of context
+and may count toward input usage; system prompts are not free tokens. Provider
+caching and compaction determine actual usage.
 
-This is application-supplied context in the user-message channel, not a provider
-system-prompt override or a guarantee that a model follows every instruction.
-Project instructions and provider/tool permissions remain in effect. The bridge
-uses the terminal prompt interface, which has no separate system-message field.
+## Lifecycle and scope
 
-Native slash commands such as `/clear` and `/resume`, and bang shell commands,
-are passed through unchanged when sent without photos. The next normal prompt
-includes context again. Approval responses and key presses remain exact input.
-Messages typed directly into desktop terminals bypass this bridge; they do not
-receive this context automatically. Other ChatGPT/Claude apps are also outside
-this scope.
+The launch settings cover agents started using the phone's Start Agent action.
+They do not retrofit existing processes or agents launched directly in a desktop
+terminal. Already-running agents stop receiving repeated blocks immediately;
+they retain whatever is in their existing conversation until it is cleared or
+compacted. Relaunch with the startup settings to adopt persistent instructions.
+Active agents are never restarted automatically.
 
-Codex supports persistent [AGENTS.md instructions](https://learn.chatgpt.com/docs/agent-configuration/agents-md),
-and Claude supports [CLAUDE.md and appended system instructions](https://code.claude.com/docs/en/memory).
-Those mechanisms can cover direct desktop use separately. We do not rewrite
-personal or project instruction files merely to connect a phone session.
+A native new-chat/reset within the configured process uses its startup settings.
+Resuming in a new process must supply the settings again; an external desktop
+resume command does not pass through the phone's start path. Other providers
+keep their usual launch and receive no automatic shared instructions.
+
+The Codex command-line setting takes precedence over a `developer_instructions`
+value in its configuration for that invocation. Project AGENTS.md guidance and
+other configuration remain loaded. If maintaining custom developer instructions,
+include them in the shared launch instructions before using this launch path.
+Claude appends to its default system prompt, preserving CLAUDE.md guidance.
+No credentials, global instruction files, permissions or personal profiles change.
+
+Edit the single shared Markdown file and release/restart the bridge. Updated
+instructions apply to subsequent agent launches; existing processes keep the
+version they started with. No iPhone rebuild or worker update is required.
+
+References: [Codex configuration](https://learn.chatgpt.com/docs/config-file/config-reference)
+and [Claude system-prompt flags](https://code.claude.com/docs/en/cli-reference#system-prompt-flags).

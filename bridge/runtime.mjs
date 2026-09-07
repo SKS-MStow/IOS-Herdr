@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { now } from './store.mjs';
 import { terminalDocument } from './terminal-output.mjs';
-import { phonePrompt } from './agent-context.mjs';
+import { phonePrompt, agentContextArgs } from './agent-context.mjs';
 
 const execute = promisify(execFile);
 export class RuntimeError extends Error {
@@ -151,7 +151,7 @@ export class Runtime {
       if (action.type === 'prompt') {
         if (current.agent_status === 'blocked') throw new RuntimeError('This agent is waiting at a question or approval. Read its output and use the response controls.', 'agent_blocked');
         if (action.imagePaths?.length && !['codex', 'claude'].includes(agent.kind)) throw new RuntimeError('This agent does not support photo messages.', 'invalid_attachment');
-        const message = phonePrompt(action, agent, machine, current);
+        const message = phonePrompt(action);
         await this.command(machine, ['agent', 'prompt', agent.paneId, message], { mutation: true, timeout: 15000 });
       } else {
         // Key input must match the status snapshot the person actually reviewed.
@@ -186,7 +186,7 @@ export class Runtime {
     const pane = machine.panes.find(p => p.id === input.paneId);
     if (!pane) throw new RuntimeError('The workspace pane no longer exists.', 'pane_missing');
     if (this.agents.some(a => a.machineId === machine.id && a.paneId === input.paneId)) throw new RuntimeError('An agent is already running in this pane.', 'agent_exists');
-    const result = await this.command(machine, ['agent', 'start', input.name, '--kind', input.kind, '--pane', input.paneId, '--timeout', '30000'], { mutation: true, timeout: 40000 });
+    const result = await this.command(machine, ['agent', 'start', input.name, '--kind', input.kind, '--pane', input.paneId, '--timeout', '30000', '--', ...agentContextArgs(input.kind, machine)], { mutation: true, timeout: 40000 });
     await this.refresh();
     return { message: 'Agent started.', agentId: `${machine.id}/${result.agent.terminal_id}` };
   }
