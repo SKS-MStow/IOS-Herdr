@@ -224,3 +224,31 @@ test('catalog storage failure stays uncertain while intrinsic mutation rejection
   }
   store.close();
 });
+
+test('HTTP photos require pairing, reach the prompt once, and reject cross-device reuse', async () => {
+  const { runtime, store, state } = fixture();
+  const root = mkdtempSync(join(tmpdir(), 'herdr-http-photos-'));
+  const app = createApp({ ...config, attachmentPath: root }, { runtime, store });
+  app.server.listen(0, '127.0.0.1'); await once(app.server, 'listening');
+  const pair = store.pair(store.pairCode().code, 'Photo phone');
+  const other = store.pair(store.pairCode().code, 'Other phone');
+  const send = async (path, body, token) => {
+    const response = await fetch(`http://127.0.0.1:${app.server.address().port}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body) });
+    return { status: response.status, data: await response.json() };
+  };
+  try {
+    const image = { contentType: 'image/png', data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a7V8AAAAASUVORK5CYII=' };
+    const base = '/api/agents/mac%2Fterm-1';
+    assert.equal((await send(base + '/attachments', image)).status, 401);
+    const photo = await send(base + '/attachments', image, pair.token);
+    assert.equal(photo.status, 201); assert.equal(state.writes.length, 0);
+    const action = { requestId: randomUUID(), type: 'prompt', text: 'Read the image', attachments: [photo.data.id] };
+    assert.equal((await send(base + '/actions', action, pair.token)).data.state, 'accepted');
+    assert.equal((await send(base + '/actions', action, pair.token)).data.state, 'accepted');
+    assert.equal(state.writes.length, 1);
+    assert.ok(state.writes[0][3].includes(root));
+    assert.ok(state.writes[0][3].includes('image-reading tool'));
+    const rejected = await send(base + '/actions', { ...action, requestId: randomUUID() }, other.token);
+    assert.equal(rejected.data.state, 'rejected'); assert.equal(state.writes.length, 1);
+  } finally { await new Promise(r => app.server.close(r)); store.close(); rmSync(root, { recursive: true }); }
+});

@@ -90,8 +90,9 @@ names and grouped list names use `headline`; compact row metadata uses `footnote
 and inline status uses `caption`. Supporting screens use `subheadline`, with
 `caption` and `footnote` for timestamps, path details and concise guidance.
 
-Session output uses the monospaced `subheadline` style and permits text
-selection. Paths and identifiers must remain accurate; monospace is appropriate
+Session output defaults to the system `body` style with 6pt line spacing and
+permits text selection. Reading options offer monospaced body text for code.
+Pause freezes the current screen; Resume reads fresh output. Paths and identifiers must remain accurate; monospace is appropriate
 for terminal content, not general interface copy. Use SF Symbols for controls,
 machine types, folders and status. Visible labels explain unfamiliar controls,
 including “Follow output”.
@@ -121,10 +122,13 @@ navigation bar keeps the qualifier visible while lists scroll, including at
 accessibility text sizes. Place this marker before the title so long names
 cannot hide the sample-data distinction.
 
-Session detail keeps machine and folder context above a scrolling output area.
-The key strip and multiline composer sit below the output. The output inset
+Session detail keeps machine and state above a scrolling output area; the folder
+is available in Reading options. The session hides the tab bar to leave more
+reading space. The plus menu offers Photo library, Image from Files and terminal
+keys. Keys expand above the composer only when requested. Photo previews include
+44pt remove controls. Upload progress names the execution machine. The output inset
 uses `content`; the composer uses `medium`. The text field grows from one to
-six lines. Explicit terminal controls have at least 44pt targets; the send
+four lines. Explicit terminal controls have at least 44pt targets; the send
 control is 48pt. The primary button token's height is a minimum.
 
 Inbox uses a native plain list. Machines, Settings and Start an agent use native
