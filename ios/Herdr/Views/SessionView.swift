@@ -14,6 +14,9 @@ struct SessionView: View {
     @State private var followOutput = true
     @State private var readingPaused = false
     @State private var terminalStyle = false
+    @State private var browser: BrowserDestination?
+    @State private var openingPreview = false
+    @State private var showPreviews = false
     @State private var showKeys = false
     @State private var showFolder = false
     @State private var selectedPhotos: [PhotosPickerItem] = []
@@ -53,9 +56,10 @@ struct SessionView: View {
                         }
                     }.accessibilityLabel(readingPaused ? "Resume live output" : "Pause output to read")
                     Menu {
-                        Toggle("Monospaced text", isOn: $terminalStyle)
+                        Toggle("Original terminal layout", isOn: $terminalStyle)
                         Toggle("Follow latest output", isOn: $followOutput)
                         Toggle("Show project folder", isOn: $showFolder)
+                        Button("Private preview links", systemImage: "network") { showPreviews = true }
                         Button("Refresh output", systemImage: "arrow.clockwise") { Task { await refreshOutput(force: true) } }
                     } label: { Image(systemName: "textformat.size").resizable().scaledToFit().frame(width: 24, height: 22).frame(width: 44, height: 44) }.accessibilityLabel("Reading options")
                 }.padding(.leading, 16).padding(.trailing, 8)
@@ -63,7 +67,7 @@ struct SessionView: View {
                     ScrollView(.vertical) {
                         VStack(alignment: .leading, spacing: 16) {
                             if let outputError { Notice(text: outputError) }
-                            if let output { Text(output.text.isEmpty ? "No output yet." : output.text).font(terminalStyle ? .system(.body, design: .monospaced) : .body).lineSpacing(6).textSelection(.enabled).fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading) }
+                            if let output { Text(output.text.isEmpty ? AttributedString("No output yet.") : TerminalText.attributed(output, monospaced: terminalStyle)).lineSpacing(6).textSelection(.enabled).fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading) }
                             else { ProgressView("Reading session…").padding(.top, 30) }
                             Color.clear.frame(height: 1).id("end")
                         }.padding(16)
@@ -133,6 +137,13 @@ struct SessionView: View {
                     } } catch { notice = error.localizedDescription }
                 }
             }
+            .environment(\.openURL, OpenURLAction { url in
+                guard TerminalText.safeURL(url.absoluteString) != nil else { return .discarded }
+                Task { await openLink(url) }; return .handled
+            })
+            .sheet(isPresented: $showPreviews) { PrivatePreviewsView().environmentObject(model) }
+            .sheet(item: $browser) { destination in SessionBrowser(url: destination.url).ignoresSafeArea() }
+            .overlay { if openingPreview { ProgressView("Opening private preview…").padding(20).background(Theme.surface, in: RoundedRectangle(cornerRadius: 12)) } }
             .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhotos, maxSelectionCount: max(1, 3 - photos.count), matching: .images)
             .fileImporter(isPresented: $showFiles, allowedContentTypes: [.image], allowsMultipleSelection: true) { result in
                 do {
@@ -149,6 +160,17 @@ struct SessionView: View {
             .alert("Session update", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) { Button("OK", role: .cancel) {} } message: { Text(notice ?? "") }
             .confirmationDialog("Interrupt this agent on \(agent?.machineName ?? "its machine")?", isPresented: $confirmInterrupt, titleVisibility: .visible) { Button("Send Control C", role: .destructive) { Task { await sendKey("ctrl+c") } } } message: { Text("This can stop its current task. The workspace remains open.") }
             .confirmationDialog("Allow a new command?", isPresented: $confirmNewInput, titleVisibility: .visible) { Button("I inspected the session; allow new input") { model.clearPending(agentId) } } message: { Text("The previous command may already have run. Herdr will not repeat it automatically.") }
+    }
+    private func openLink(_ url: URL) async {
+        guard !openingPreview else { return }
+        if !TerminalText.isLocal(url) { browser = BrowserDestination(url: url); return }
+        guard let client = model.client, !model.isDemo else { notice = "Local preview links open through your paired Mac. Connect to use a real preview."; return }
+        openingPreview = true; defer { openingPreview = false }
+        do {
+            let destination: PreviewDestination = try await client.request("/api/previews/open", method: "POST", body: ["agentId": agentId, "url": url.absoluteString])
+            guard let safe = TerminalText.safeURL(destination.url) else { throw APIError(message: "The controller returned an invalid preview link.", code: "invalid_preview") }
+            browser = BrowserDestination(url: safe)
+        } catch { notice = error.localizedDescription }
     }
     private func key(_ title: String?, key: String, symbol: String? = nil) -> some View {
         Button { Task { await sendKey(key) } } label: { Group { if let symbol { Image(systemName: symbol) } else { Text(title ?? key).font(.subheadline) } }.frame(minWidth: 44, minHeight: 44) }.disabled(!canSend).accessibilityLabel(title ?? key)

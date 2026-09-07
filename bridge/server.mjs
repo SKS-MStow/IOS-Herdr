@@ -8,6 +8,7 @@ import { Store, digest, now, defaultPreferences } from './store.mjs';
 import { Runtime } from './runtime.mjs';
 import { Notifications } from './notifications.mjs';
 import { Attachments } from './attachments.mjs';
+import { Previews } from './previews.mjs';
 
 export class HTTPError extends Error { constructor(status, message, code = 'invalid_request') { super(message); this.status = status; this.code = code; } }
 const string = (value, label, max = 256) => {
@@ -55,6 +56,7 @@ function setupPage() {
 
 export function createApp(config, { store = new Store(config.databasePath), runtime, notifications } = {}) {
   runtime ||= new Runtime(config, store); notifications ||= new Notifications(config, store);
+  const previews = new Previews(config, runtime);
   const rateLimits = new Map();
   function limit(key, max = 8) {
     const bucket = Math.floor(now() / 60); const current = rateLimits.get(key);
@@ -155,6 +157,14 @@ export function createApp(config, { store = new Store(config.databasePath), runt
       if (req.method === 'DELETE' && url.pathname === '/api/device') { store.revoke(device.id); return json(res, 200, { revoked: true }); }
       const opMatch = url.pathname.match(/^\/api\/operations\/([a-f0-9-]+)$/i);
       if (req.method === 'GET' && opMatch) { const result = store.operation(opMatch[1], device.id); if (!result) throw new HTTPError(404, 'This command was not recorded by the controller.', 'operation_missing'); return json(res, 200, result); }
+      if (req.method === 'GET' && url.pathname === '/api/previews') return json(res, 200, previews.list());
+      const previewMatch = url.pathname.match(/^\/api\/previews\/(\d{4})$/);
+      if (req.method === 'DELETE' && previewMatch) return json(res, 200, await previews.remove(Number(previewMatch[1])));
+      if (req.method === 'POST' && url.pathname === '/api/previews/open') {
+        limit(`preview:${device.id}`, 12);
+        const body = await readJSON(req); string(body.agentId, 'agent'); string(body.url, 'preview URL', 4096);
+        return json(res, 200, await previews.open(body.agentId, body.url));
+      }
       const uploadMatch = url.pathname.match(/^\/api\/agents\/([^/]+)\/attachments$/);
       const attachments = new Attachments(config, runtime);
       if (req.method === 'POST' && uploadMatch) {
@@ -199,8 +209,9 @@ export function createApp(config, { store = new Store(config.databasePath), runt
       else res.end();
     }
   });
+  server.on('close', () => previews.close());
   server.requestTimeout = 65000; server.headersTimeout = 10000;
-  return { server, store, runtime, notifications };
+  return { server, store, runtime, notifications, previews };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -211,7 +222,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const app = createApp(config);
   app.server.listen(config.port || 8790, '127.0.0.1', () => console.log('Herdr iPhone controller listening on loopback.'));
   await app.runtime.refresh();
+  await app.previews.restore().catch(() => {});
   const timer = setInterval(() => { app.runtime.refresh().catch(() => {}); app.notifications.drain().catch(() => {}); }, 5000);
-  function stop() { clearInterval(timer); app.server.close(() => { app.store.close(); process.exit(0); }); setTimeout(() => process.exit(0), 3000).unref(); }
+  function stop() { clearInterval(timer); app.previews.close(); app.server.close(() => { app.store.close(); process.exit(0); }); setTimeout(() => process.exit(0), 3000).unref(); }
   process.on('SIGTERM', stop); process.on('SIGINT', stop);
 }

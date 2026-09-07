@@ -91,7 +91,13 @@ and inline status uses `caption`. Supporting screens use `subheadline`, with
 `caption` and `footnote` for timestamps, path details and concise guidance.
 
 Session output defaults to the system `body` style with 6pt line spacing and
-permits text selection. Reading options offer monospaced body text for code.
+permits text selection. Reading options offer the original terminal layout in monospaced body text.
+Terminal foreground colours and emphasis are preserved; dim text stays legible.
+HTTP/HTTPS links are mint and underlined. Reading mode removes terminal-width
+rulers and excess blank lines, preserving indentation. Links open native Safari
+inside the app. A localhost link shows progress while its private Tailscale
+preview is prepared; failures keep the session visible with an actionable error.
+Private preview links are managed in a native list under Reading options.
 Pause freezes the current screen; Resume reads fresh output. Paths and identifiers must remain accurate; monospace is appropriate
 for terminal content, not general interface copy. Use SF Symbols for controls,
 machine types, folders and status. Visible labels explain unfamiliar controls,
