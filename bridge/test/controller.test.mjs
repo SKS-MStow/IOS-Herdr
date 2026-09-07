@@ -63,7 +63,9 @@ test('prompt data is passed literally and reads never change the selected deskto
   const { runtime, state, store } = fixture(); await runtime.refresh();
   const text = 'Describe $HOME; $(touch /tmp/not-executed) "quoted"\nsecond line';
   await runtime.action('mac/term-1', { type: 'prompt', text });
-  assert.deepEqual(state.writes, [['agent', 'prompt', 'w1:p1', text]]);
+  assert.deepEqual(state.writes[0].slice(0, 3), ['agent', 'prompt', 'w1:p1']);
+  assert.ok(state.writes[0][3].startsWith('[Herdr phone context v1]'));
+  assert.ok(state.writes[0][3].endsWith('\n\n' + text));
   const output = await runtime.output('mac/term-1'); assert.equal(output.text, 'Example output\n'); assert.equal(output.sequence, 1);
   assert.ok(!state.writes.flat().includes('focus')); store.close();
 });

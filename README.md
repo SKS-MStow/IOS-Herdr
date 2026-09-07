@@ -76,6 +76,13 @@ Mac and Windows backends, redirects, WebSockets and restart restoration.
 Physical installation of build 5 remains unconfirmed. See
 [the verification record](docs/release-status.json).
 
+## Context across phone chats
+
+Every normal message from the iPhone automatically includes shared Herdr
+instructions for Codex and Claude: phone-friendly output, preview links, photos
+and the execution machine. This also covers existing sessions and the next
+message after clearing a chat. See [scope and editing](docs/agent-context.md).
+
 ## Shared workspaces
 
 Build 3 adds the same named, mixed-machine groups to desktop Herdr and the
