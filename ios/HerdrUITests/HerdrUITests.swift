@@ -17,6 +17,7 @@ final class HerdrUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Demo · commands are disabled"].exists)
         XCTAssertFalse(app.buttons["Send message"].isEnabled)
         capture("02-session", app: app)
+        app.navigationBars.buttons.element(boundBy: 0).tap()
         app.tabBars.buttons["Inbox"].tap()
         XCTAssertTrue(app.staticTexts["An agent needs you"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["DEMO"].exists)
@@ -27,6 +28,42 @@ final class HerdrUITests: XCTestCase {
         app.tabBars.buttons["Machines"].tap()
         XCTAssertTrue(app.staticTexts["Work laptop"].waitForExistence(timeout: 5))
         capture("04-machines", app: app)
+    }
+    func testSessionReadingAndAttachmentControls() {
+        let app = XCUIApplication(); app.launchArguments = ["--demo"]; app.launch()
+        app.buttons["All agents"].tap()
+        app.buttons["agent-mac/sample"].tap()
+        XCTAssertTrue(app.buttons["Pause output to read"].waitForExistence(timeout: 10))
+        app.buttons["Pause output to read"].tap()
+        XCTAssertTrue(app.buttons["Resume live output"].exists)
+        capture("20-session-reading", app: app)
+        app.buttons["Attachments and terminal keys"].tap()
+        XCTAssertTrue(app.buttons["Photo library"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Image from Files"].exists)
+        capture("21-session-attachments", app: app)
+        app.buttons["Show terminal keys"].tap()
+        XCTAssertTrue(app.buttons["Esc"].exists)
+        XCTAssertFalse(app.buttons["Esc"].isEnabled)
+        app.buttons["Attachments and terminal keys"].tap()
+        app.buttons["Photo library"].tap()
+        let photo = app.images.matching(identifier: "PXGGridLayout-Info").firstMatch
+        XCTAssertTrue(photo.waitForExistence(timeout: 10))
+        // The system Photos grid exposes images with frames but no AX hit point.
+        photo.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["Remove photo 1"].waitForExistence(timeout: 10))
+        capture("24-photo-composer", app: app)
+        app.buttons["Remove photo 1"].tap()
+        XCTAssertFalse(app.buttons["Remove photo 1"].exists)
+    }
+    func testSessionReadingAtAccessibilitySize() {
+        let app = XCUIApplication(); app.launchArguments = ["--demo", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]; app.launch()
+        app.buttons["All agents"].tap(); app.buttons["agent-mac/sample"].tap()
+        XCTAssertTrue(app.buttons["Attachments and terminal keys"].waitForExistence(timeout: 10))
+        capture("22-session-accessibility", app: app)
+        XCUIDevice.shared.orientation = .landscapeLeft
+        capture("23-session-landscape", app: app)
+        XCUIDevice.shared.orientation = .portrait
     }
     func testPairingStartsWithSendDisabled() throws {
         let app = XCUIApplication(); app.launchArguments = []; app.launch()
