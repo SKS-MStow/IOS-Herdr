@@ -93,7 +93,7 @@ import UserNotifications
             if (result.state == "accepted" && !retainAccepted) || result.state == "rejected" { clearPending(scope) }
             return result
         } catch {
-            if let apiError = error as? APIError, ["invalid_request", "unauthorized", "rate_limited", "origin", "request_conflict"].contains(apiError.code) { clearPending(scope); throw error }
+            if let apiError = error as? APIError, ["invalid_request", "invalid_attachment", "unauthorized", "rate_limited", "origin", "request_conflict"].contains(apiError.code) { clearPending(scope); throw error }
             throw APIError(message: "Delivery is unconfirmed. Your message is kept here. Check the session and delivery status before sending anything else.", code: "uncertain")
         }
     }

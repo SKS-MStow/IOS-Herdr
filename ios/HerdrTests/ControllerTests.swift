@@ -1,7 +1,23 @@
 import XCTest
+import UIKit
 @testable import Herdr
 
 final class ControllerTests: XCTestCase {
+    func testPhotoPreparationRejectsInvalidDataAndBoundsImageSize() throws {
+        XCTAssertThrowsError(try SessionPhoto.prepare(Data("not an image".utf8)))
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 4000, height: 1000))
+        let data = renderer.pngData { context in UIColor.red.setFill(); context.fill(CGRect(x: 0, y: 0, width: 4000, height: 1000)) }
+        let photo = try SessionPhoto.prepare(data)
+        XCTAssertLessThanOrEqual(photo.image.size.width, 2400)
+        XCTAssertLessThanOrEqual(photo.data.count, 3 * 1024 * 1024)
+        XCTAssertEqual(photo.data.prefix(2), Data([255, 216]))
+        let scope = "test-" + UUID().uuidString
+        PhotoDrafts.save([photo], scope: scope)
+        XCTAssertEqual(PhotoDrafts.load(scope).first?.data, photo.data)
+        PhotoDrafts.save([], scope: scope)
+        XCTAssertTrue(PhotoDrafts.load(scope).isEmpty)
+    }
+
     func testControllerAddressRequiresHTTPSAndRejectsCredentialsOrExtraRoutes() throws {
         XCTAssertEqual(try ControllerClient.validatedURL("https://mac.example:8443/").absoluteString, "https://mac.example:8443")
         for value in ["http://mac.example", "https://user:secret@mac.example", "https://mac.example/api", "https://mac.example?token=bad", "https://mac.example#bad"] {

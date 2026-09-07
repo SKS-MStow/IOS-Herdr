@@ -7,6 +7,7 @@ import { pathToFileURL } from 'node:url';
 import { Store, digest, now, defaultPreferences } from './store.mjs';
 import { Runtime } from './runtime.mjs';
 import { Notifications } from './notifications.mjs';
+import { Attachments } from './attachments.mjs';
 
 export class HTTPError extends Error { constructor(status, message, code = 'invalid_request') { super(message); this.status = status; this.code = code; } }
 const string = (value, label, max = 256) => {
@@ -17,15 +18,16 @@ const uuid = value => { if (!/^[a-f0-9-]{36}$/i.test(value || '')) throw new HTT
 export function validateAction(body) {
   uuid(body.requestId);
   if (!['prompt', 'response', 'key'].includes(body.type)) throw new HTTPError(400, 'Unsupported action.');
-  if (body.type === 'prompt' || body.type === 'response') string(body.text, 'message', 16000);
+  if (body.attachments !== undefined && (!Array.isArray(body.attachments) || body.attachments.length > 3 || body.attachments.some(id => typeof id !== 'string' || !/^[a-f0-9]{64}$/.test(id)) || (body.attachments.length > 0 && body.type !== 'prompt'))) throw new HTTPError(400, 'Attach up to three photos to a new prompt.', 'invalid_attachment');
+  if (body.type === 'prompt' || body.type === 'response') { if (!body.attachments?.length || body.text) string(body.text, 'message', 16000); }
   if (body.type === 'key' && !['esc', 'tab', 'enter', 'up', 'down', 'left', 'right', 'ctrl+c'].includes(body.key)) throw new HTTPError(400, 'Unsupported key.');
   if (body.type !== 'prompt' && !Number.isSafeInteger(body.sequence)) throw new HTTPError(400, 'Refresh the session before responding.');
   return body;
 }
-async function readJSON(req) {
+async function readJSON(req, maximum = 65536) {
   if (!req.headers['content-type']?.startsWith('application/json')) throw new HTTPError(415, 'JSON is required.');
   let body = ''; let size = 0;
-  for await (const chunk of req) { size += chunk.length; if (size > 65536) throw new HTTPError(413, 'Request is too large.'); body += chunk; }
+  for await (const chunk of req) { size += chunk.length; if (size > maximum) throw new HTTPError(413, 'Request is too large.'); body += chunk; }
   try { const result = JSON.parse(body); if (!result || Array.isArray(result) || typeof result !== 'object') throw new Error(); return result; }
   catch { throw new HTTPError(400, 'Invalid JSON.'); }
 }
@@ -153,13 +155,20 @@ export function createApp(config, { store = new Store(config.databasePath), runt
       if (req.method === 'DELETE' && url.pathname === '/api/device') { store.revoke(device.id); return json(res, 200, { revoked: true }); }
       const opMatch = url.pathname.match(/^\/api\/operations\/([a-f0-9-]+)$/i);
       if (req.method === 'GET' && opMatch) { const result = store.operation(opMatch[1], device.id); if (!result) throw new HTTPError(404, 'This command was not recorded by the controller.', 'operation_missing'); return json(res, 200, result); }
+      const uploadMatch = url.pathname.match(/^\/api\/agents\/([^/]+)\/attachments$/);
+      const attachments = new Attachments(config, runtime);
+      if (req.method === 'POST' && uploadMatch) {
+        limit(`upload:${device.id}`, 12);
+        const body = await readJSON(req, 4 * 1024 * 1024 + 4096);
+        return json(res, 201, await attachments.upload(device.id, decodeURIComponent(uploadMatch[1]), body));
+      }
       const agentMatch = url.pathname.match(/^\/api\/agents\/([^/]+)\/(output|actions)$/);
       if (agentMatch) {
         const id = decodeURIComponent(agentMatch[1]);
         if (req.method === 'GET' && agentMatch[2] === 'output') return json(res, 200, await runtime.output(id));
         if (req.method === 'POST' && agentMatch[2] === 'actions') {
           const body = validateAction(await readJSON(req));
-          return json(res, 200, await operation(device, { ...body, agentId: id }, () => runtime.action(id, body)));
+          return json(res, 200, await operation(device, { ...body, agentId: id }, async () => runtime.action(id, { ...body, imagePaths: await attachments.paths(device.id, id, body.attachments) })));
         }
       }
       if (req.method === 'POST' && url.pathname === '/api/workspaces') {

@@ -148,7 +148,9 @@ export class Runtime {
       const { agent, machine, current } = await this.resolve(id);
       if (action.type === 'prompt') {
         if (current.agent_status === 'blocked') throw new RuntimeError('This agent is waiting at a question or approval. Read its output and use the response controls.', 'agent_blocked');
-        await this.command(machine, ['agent', 'prompt', agent.paneId, action.text], { mutation: true, timeout: 15000 });
+        if (action.imagePaths?.length && !['codex', 'claude'].includes(agent.kind)) throw new RuntimeError('This agent does not support photo messages.', 'invalid_attachment');
+        const message = action.imagePaths?.length ? `${action.text || 'Describe the attached images.'}\n\nAttached images are stored on this computer. Open each image file with your image-reading tool before answering:\n${action.imagePaths.map(path => JSON.stringify(path)).join('\n')}` : action.text;
+        await this.command(machine, ['agent', 'prompt', agent.paneId, message], { mutation: true, timeout: 15000 });
       } else {
         // Key input must match the status snapshot the person actually reviewed.
         if (current.state_change_seq !== action.sequence) throw new RuntimeError('The session changed since you viewed it. Refresh the output before responding.', 'stale_response');

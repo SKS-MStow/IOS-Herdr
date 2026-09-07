@@ -92,3 +92,17 @@ appeared on the phone.
 See [release status](docs/release-status.json) for the current build’s Apple
 processing, group assignment and verification timestamps. A newly available
 TestFlight build is distinct from that version being installed on the phone.
+
+## Session reading and photos (build 4)
+
+Session output now uses body-size text with extra line spacing, optional
+monospace and explicit Pause/Resume. The tab bar and normally hidden terminal
+keys leave more reading room. The folder is available through Reading options.
+The header and icon controls were checked at accessibility XXXL; metadata wraps
+without splitting status words or overflowing its column.
+
+The native system photo picker is presented from a stable view modifier, with
+image-file selection as a second entry point. Composer previews include remove
+controls, machine-specific upload progress and persistent unsent photo drafts.
+Synthetic-image verification succeeded with live Mac/Codex and Windows/Claude.
+Output remains a live terminal-screen read, not reconstructed chat history.

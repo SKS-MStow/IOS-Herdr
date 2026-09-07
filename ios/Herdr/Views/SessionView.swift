@@ -1,45 +1,73 @@
 import SwiftUI
+import PhotosUI
+import UniformTypeIdentifiers
 
 struct SessionView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let agentId: String
     @State private var output: SessionOutput?
     @State private var outputError: String?
     @State private var message = ""
     @State private var sending = false
     @State private var followOutput = true
+    @State private var readingPaused = false
+    @State private var terminalStyle = false
+    @State private var showKeys = false
+    @State private var showFolder = false
+    @State private var selectedPhotos: [PhotosPickerItem] = []
+    @State private var photos: [SessionPhoto] = []
+    @State private var loadingPhotos = false
+    @State private var restoredPhotos = false
+    @State private var showFiles = false
+    @State private var showPhotoPicker = false
+    @State private var uploadProgress: String?
     @State private var notice: String?
     @State private var confirmInterrupt = false
     @State private var confirmNewInput = false
     @FocusState private var composing: Bool
     private var agent: Agent? { model.agents.first { $0.id == agentId } }
+    private var photoScope: String { "\(model.client?.connection.deviceId ?? "demo")-\(agentId)" }
     private var pending: Bool { model.pending[agentId] != nil }
-    private var canSend: Bool { model.connected && agent?.stale == false && !sending && !pending && output != nil }
+    private var canSend: Bool { model.connected && agent?.stale == false && !sending && !pending && !loadingPhotos && output != nil }
     var body: some View {
         VStack(spacing: 0) {
             if let agent {
                 VStack(alignment: .leading, spacing: 8) {
-                    HStack { Text("\(agent.provider) · \(agent.machineName)").font(.headline); Spacer(); StatusLabel(agent: agent) }
-                    Label(agent.cwd, systemImage: "folder").font(.caption).foregroundStyle(Theme.secondary).lineLimit(2).textSelection(.enabled)
+                    Text("\(agent.provider) · \(agent.machineName) · \(agent.statusLabel)")
+                        .font(.footnote).foregroundStyle(agent.needsAttention ? Theme.attention : Theme.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true)
+                    if showFolder { Label(agent.cwd, systemImage: "folder").font(.footnote).foregroundStyle(Theme.secondary).textSelection(.enabled) }
                     if agent.stale || !model.connected && !model.isDemo { Notice(text: "Connection lost. Output may be out of date.") }
                 }.padding(.horizontal, 20).padding(.vertical, 12)
                 Divider()
                 HStack {
-                    Text(model.isDemo ? "Sample output" : "Session output").font(.subheadline.weight(.medium))
+                    Text(model.isDemo ? "Sample output" : readingPaused ? "Paused output" : "Session output").font(.footnote.weight(.medium)).fixedSize(horizontal: false, vertical: true)
                     Spacer()
-                    Toggle(isOn: $followOutput) { Text("Follow output").font(.caption) }.fixedSize().accessibilityLabel("Follow new output")
-                    Button { Task { await refreshOutput() } } label: { Image(systemName: "arrow.clockwise").frame(width: 44, height: 44) }.accessibilityLabel("Refresh output")
-                }.padding(.leading, 20).padding(.trailing, 8)
+                    Button { readingPaused.toggle(); if !readingPaused { Task { await refreshOutput() } } } label: {
+                        if dynamicTypeSize.isAccessibilitySize {
+                            Image(systemName: readingPaused ? "play.fill" : "pause.fill").resizable().scaledToFit().frame(width: 18, height: 18).frame(width: 44, height: 44)
+                        } else {
+                            Label(readingPaused ? "Resume" : "Pause", systemImage: readingPaused ? "play.fill" : "pause.fill").font(.subheadline).frame(minHeight: 44)
+                        }
+                    }.accessibilityLabel(readingPaused ? "Resume live output" : "Pause output to read")
+                    Menu {
+                        Toggle("Monospaced text", isOn: $terminalStyle)
+                        Toggle("Follow latest output", isOn: $followOutput)
+                        Toggle("Show project folder", isOn: $showFolder)
+                        Button("Refresh output", systemImage: "arrow.clockwise") { Task { await refreshOutput(force: true) } }
+                    } label: { Image(systemName: "textformat.size").resizable().scaledToFit().frame(width: 24, height: 22).frame(width: 44, height: 44) }.accessibilityLabel("Reading options")
+                }.padding(.leading, 16).padding(.trailing, 8)
                 ScrollViewReader { proxy in
                     ScrollView(.vertical) {
                         VStack(alignment: .leading, spacing: 16) {
                             if let outputError { Notice(text: outputError) }
-                            if let output { Text(output.text.isEmpty ? "No output yet." : output.text).font(.system(.subheadline, design: .monospaced)).textSelection(.enabled).fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading) }
+                            if let output { Text(output.text.isEmpty ? "No output yet." : output.text).font(terminalStyle ? .system(.body, design: .monospaced) : .body).lineSpacing(6).textSelection(.enabled).fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading) }
                             else { ProgressView("Reading session…").padding(.top, 30) }
                             Color.clear.frame(height: 1).id("end")
-                        }.padding(20)
-                    }.onChange(of: output?.text) { _, _ in if followOutput { proxy.scrollTo("end", anchor: .bottom) } }
+                        }.padding(16)
+                    }.scrollDismissesKeyboard(.interactively).onChange(of: output?.text) { _, _ in if followOutput && !readingPaused { proxy.scrollTo("end", anchor: .bottom) } }
                 }
                 if pending {
                     VStack(alignment: .leading, spacing: 8) {
@@ -52,7 +80,7 @@ struct SessionView: View {
                     }.frame(maxWidth: .infinity, alignment: .leading).padding(16).background(Theme.surface)
                 }
                 Divider()
-                HStack(spacing: 4) {
+                if showKeys { HStack(spacing: 4) {
                     key("Esc", key: "esc")
                     key("Tab", key: "tab")
                     key(nil, key: "up", symbol: "arrow.up")
@@ -60,27 +88,62 @@ struct SessionView: View {
                     key(nil, key: "enter", symbol: "return")
                     Spacer(minLength: 0)
                     Button { confirmInterrupt = true } label: { Image(systemName: "stop.circle").frame(minWidth: 44, minHeight: 44) }.disabled(!canSend).accessibilityLabel("Interrupt agent with Control C")
-                }.padding(.horizontal, 12)
+                }.padding(.horizontal, 12) }
                 VStack(spacing: 7) {
+                    if !photos.isEmpty { PhotoStrip(photos: photos, disabled: sending || pending) { id in photos.removeAll { $0.id == id } } }
+                    if let uploadProgress { Text(uploadProgress).font(.footnote).foregroundStyle(Theme.mint) }
+                    if loadingPhotos { ProgressView("Preparing photos…") }
                     if agent.needsAttention { Text("Read the question above. Your response goes to this agent’s active prompt.").font(.caption).foregroundStyle(Theme.attention).frame(maxWidth: .infinity, alignment: .leading) }
-                    HStack(alignment: .bottom, spacing: 12) {
+                    HStack(alignment: .bottom, spacing: 8) {
+                        Menu {
+                            Button("Photo library", systemImage: "photo.on.rectangle") { showPhotoPicker = true }.disabled(photos.count >= 3 || agent.needsAttention || !["codex", "claude"].contains(agent.kind))
+                            Button("Image from Files", systemImage: "folder") { showFiles = true }
+                                .disabled(photos.count >= 3 || agent.needsAttention || !["codex", "claude"].contains(agent.kind))
+                            Button(showKeys ? "Hide terminal keys" : "Show terminal keys", systemImage: "keyboard") { showKeys.toggle() }
+                        } label: { Image(systemName: "plus").resizable().scaledToFit().frame(width: 22, height: 22).frame(width: 44, height: 48) }
+                            .disabled(sending || pending || loadingPhotos).accessibilityLabel("Attachments and terminal keys")
                         TextField(agent.needsAttention ? "Respond to this prompt…" : "Message \(agent.name)…", text: $message, axis: .vertical)
-                            .lineLimit(1...6).focused($composing).padding(14).background(Theme.surface, in: RoundedRectangle(cornerRadius: 12)).accessibilityLabel("Message to \(agent.name) on \(agent.machineName)")
+                            .lineLimit(1...4).disabled(sending || pending).focused($composing).padding(14).background(Theme.surface, in: RoundedRectangle(cornerRadius: 12)).accessibilityLabel("Message to \(agent.name) on \(agent.machineName)")
                         Button { Task { await sendMessage() } } label: {
                             if sending { ProgressView().frame(width: 48, height: 48) }
-                            else { Image(systemName: "arrow.up").font(.title3.bold()).frame(width: 48, height: 48).foregroundStyle(Theme.background).background(Theme.mint, in: Circle()) }
-                        }.disabled(!canSend || message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty).opacity(canSend ? 1 : 0.5).accessibilityLabel("Send message")
+                            else { Image(systemName: "arrow.up").resizable().scaledToFit().frame(width: 20, height: 22).frame(width: 48, height: 48).foregroundStyle(Theme.background).background(Theme.mint, in: Circle()) }
+                        }.disabled(!canSend || (message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && photos.isEmpty)).opacity(canSend ? 1 : 0.5).accessibilityLabel("Send message")
                     }
                     Text(model.isDemo ? "Demo · commands are disabled" : "Runs on \(agent.machineName)").font(.caption).foregroundStyle(Theme.secondary)
-                }.padding(.horizontal, 16).padding(.bottom, 12)
+                }.fixedSize(horizontal: false, vertical: true).padding(.horizontal, 16).padding(.bottom, 12)
             } else {
                 ContentUnavailableView("Session unavailable", systemImage: "terminal", description: Text("It may have ended or moved. Pull down the agent list to refresh."))
             }
-        }.herdrScreen().navigationTitle(agent?.name ?? "Session").navigationBarTitleDisplayMode(.inline)
+        }.herdrScreen().toolbar(.hidden, for: .tabBar).navigationTitle(agent?.name ?? "Session").navigationBarTitleDisplayMode(.inline)
             .task(id: "\(agentId)-\(scenePhase == .active)") {
                 guard scenePhase == .active else { return }
+                if !restoredPhotos && !model.isDemo { photos = PhotoDrafts.load(photoScope); restoredPhotos = true }
                 message = UserDefaults.standard.string(forKey: "draft.\(agentId)") ?? ""
                 while !Task.isCancelled { await refreshOutput(); try? await Task.sleep(for: .seconds(3)) }
+            }
+            .onChange(of: photos.map(\.id)) { _, _ in if !model.isDemo { PhotoDrafts.save(photos, scope: photoScope) } }
+            .onChange(of: selectedPhotos) { _, items in
+                guard !items.isEmpty else { return }
+                loadingPhotos = true
+                Task {
+                    defer { loadingPhotos = false; selectedPhotos = [] }
+                    do { for item in items.prefix(max(0, 3 - photos.count)) {
+                        guard let data = try await item.loadTransferable(type: Data.self) else { throw APIError(message: "This photo is unavailable. Download it from iCloud and try again.", code: "invalid_attachment") }
+                        photos.append(try SessionPhoto.prepare(data))
+                    } } catch { notice = error.localizedDescription }
+                }
+            }
+            .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhotos, maxSelectionCount: max(1, 3 - photos.count), matching: .images)
+            .fileImporter(isPresented: $showFiles, allowedContentTypes: [.image], allowsMultipleSelection: true) { result in
+                do {
+                    let urls = try result.get()
+                    for url in urls.prefix(max(0, 3 - photos.count)) {
+                        let access = url.startAccessingSecurityScopedResource(); defer { if access { url.stopAccessingSecurityScopedResource() } }
+                        let values = try url.resourceValues(forKeys: [.fileSizeKey])
+                        guard (values.fileSize ?? Int.max) <= 30 * 1024 * 1024 else { throw APIError(message: "Choose an image smaller than 30 MB.", code: "invalid_attachment") }
+                        photos.append(try SessionPhoto.prepare(Data(contentsOf: url)))
+                    }
+                } catch { notice = error.localizedDescription }
             }
             .onChange(of: message) { _, value in if !model.isDemo { UserDefaults.standard.set(value, forKey: "draft.\(agentId)") } }
             .alert("Session update", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) { Button("OK", role: .cancel) {} } message: { Text(notice ?? "") }
@@ -90,19 +153,30 @@ struct SessionView: View {
     private func key(_ title: String?, key: String, symbol: String? = nil) -> some View {
         Button { Task { await sendKey(key) } } label: { Group { if let symbol { Image(systemName: symbol) } else { Text(title ?? key).font(.subheadline) } }.frame(minWidth: 44, minHeight: 44) }.disabled(!canSend).accessibilityLabel(title ?? key)
     }
-    private func refreshOutput() async {
+    private func refreshOutput(force: Bool = false) async {
+        guard !readingPaused || force else { return }
         guard model.isDemo || model.connected else { return }
-        do { output = try await model.output(for: agentId); outputError = nil }
+        do { let next = try await model.output(for: agentId); guard !readingPaused || force else { return }; output = next; outputError = nil }
         catch { if !Task.isCancelled { outputError = error.localizedDescription } }
     }
     private func sendMessage() async {
         guard let agent, let output, canSend else { return }
         let sentMessage = message
-        sending = true; defer { sending = false }
+        sending = true; defer { sending = false; uploadProgress = nil }
         do {
+            if !photos.isEmpty {
+                guard !agent.needsAttention, let client = model.client else { throw APIError(message: "Respond to the active question before sending photos.", code: "invalid_attachment") }
+                for index in photos.indices where photos[index].uploadedId == nil {
+                    uploadProgress = "Uploading photo \(index + 1) of \(photos.count) to \(agent.machineName)…"
+                    let uploaded: UploadedPhoto = try await client.request("/api/agents/\(ControllerClient.agentPath(agentId))/attachments", method: "POST", body: ["contentType": "image/jpeg", "data": photos[index].data.base64EncodedString()])
+                    photos[index].uploadedId = uploaded.id
+                    PhotoDrafts.save(photos, scope: photoScope)
+                }
+            }
+            uploadProgress = nil
             let operation = try await model.perform(path: "/api/agents/\(ControllerClient.agentPath(agentId))/actions", scope: agentId,
-                body: ["type": agent.needsAttention ? "response" : "prompt", "text": sentMessage, "sequence": output.sequence])
-            if operation.state == "accepted" { if message == sentMessage { message = ""; composing = false }; await refreshOutput(); await model.refresh() }
+                body: ["type": agent.needsAttention ? "response" : "prompt", "text": sentMessage, "sequence": output.sequence, "attachments": photos.compactMap(\.uploadedId)])
+            if operation.state == "accepted" { if message == sentMessage { message = ""; composing = false }; photos = []; await refreshOutput(); await model.refresh() }
             else { notice = operation.message }
         } catch { notice = error.localizedDescription }
     }
@@ -116,7 +190,7 @@ struct SessionView: View {
         } catch { notice = error.localizedDescription }
     }
     private func checkDelivery() async {
-        do { if let result = try await model.checkPending(agentId) { notice = result.message }; await refreshOutput() }
+        do { if let result = try await model.checkPending(agentId) { notice = result.message; if result.state == "accepted" { message = ""; photos = [] } }; await refreshOutput(force: true) }
         catch { notice = error.localizedDescription }
     }
 }
