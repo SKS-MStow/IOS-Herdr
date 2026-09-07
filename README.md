@@ -1,7 +1,7 @@
 # Herdr for iPhone
 
 Native SwiftUI companion for Mark’s shared Herdr. See agents on the Mac and Home
-PC, read their terminal screens, send messages and key responses, create
+PC, read their terminal screens, send messages, photos and key responses, create
 workspaces, start agents, and receive activity notifications.
 
 The selected design is A / option 1: graphite surfaces with mint controls.
@@ -18,15 +18,18 @@ HTTPS, without Funnel or public internet exposure.
 
 ## Using the app
 
-1. Install or update to **Herdr Shared 0.1.0 (3)** in TestFlight. If already paired,
+1. Install or update to **Herdr Shared 0.1.0 (4)** in TestFlight. If already paired,
    your connection and notification settings carry over.
 2. On the iPhone, open the pairing page and create a one-use code. Tap **Open
    Herdr and connect**, then **Connect to Mac**. Codes expire after ten minutes.
-3. Build 3 adds **Workspaces**: create a group, add existing Mac or Home PC agents,
+3. In **Workspaces**, create a group, add existing Mac or Home PC agents,
    and open any agent to read its terminal or send input. **All agents** remains
    available. Starting a new agent requires an existing folder on its execution
    machine; creating a shared group does not.
-4. In **Settings**, enable notifications, choose alert types and send a test
+4. In a session, **Pause** holds the output while you read. The **aA** menu offers
+   monospaced text and reading options. Tap **+** to attach up to three photos
+   from Photos or Files to a Codex or Claude prompt. [Photo details](docs/session-photos.md).
+5. In **Settings**, enable notifications, choose alert types and send a test
    notification. This requires an APNs key on the controller. Apple accepting
    a notification is separate from the alert appearing on the phone.
 
