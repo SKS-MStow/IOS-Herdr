@@ -1,5 +1,6 @@
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
+import { randomUUID } from 'node:crypto';
 import { readFileSync, mkdirSync, writeFileSync, renameSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { createServer as createTCPServer, connect } from 'node:net';
@@ -19,7 +20,7 @@ export class Previews {
     this.config = config; this.runtime = runtime; this.runner = runner; this.tunnels = new Map(); this.relays = new Map();
     this.path = config.previewPath || join(dirname(config.databasePath), 'previews.json');
     this.records = [];
-    try { const saved = JSON.parse(readFileSync(this.path, 'utf8')); if (!Array.isArray(saved) || saved.length > 8 || saved.some(r => !r || !/^(mac|[a-f0-9]{32})$/.test(r.machineId) || !Number.isInteger(r.port) || r.port < 1024 || r.port > 65535 || !Number.isInteger(r.httpsPort) || r.httpsPort < 8444 || r.httpsPort > 8451 || r.localPort !== 19044 + r.httpsPort - 8444) || new Set(saved.map(r => r.httpsPort)).size !== saved.length) throw new Error(); this.records = saved; } catch (error) { if (error.code !== 'ENOENT') this.invalid = true; }
+    try { const saved = JSON.parse(readFileSync(this.path, 'utf8')); if (!Array.isArray(saved) || saved.length > 8 || saved.some(r => !r || !/^[a-f0-9-]{36}$/.test(r.id) || !/^(mac|[a-f0-9]{32})$/.test(r.machineId) || !Number.isInteger(r.port) || r.port < 1024 || r.port > 65535 || !Number.isInteger(r.httpsPort) || r.httpsPort < 8444 || r.httpsPort > 8451 || r.localPort !== 19044 + r.httpsPort - 8444) || new Set(saved.map(r => r.httpsPort)).size !== saved.length) throw new Error(); this.records = saved; } catch (error) { if (error.code !== 'ENOENT') this.invalid = true; }
   }
   async tailscale(args) {
     try { return await this.runner(this.config.tailscalePath || '/opt/homebrew/bin/tailscale', args, { env: cleanEnvironment(), timeout: 15000, maxBuffer: 1024 * 1024 }); }
@@ -92,7 +93,7 @@ export class Previews {
       if (!record) {
         const httpsPort = Array.from({length:8},(_,i)=>8444+i).find(p=>!this.records.some(r=>r.httpsPort===p) && !status.TCP?.[p] && !status.Web?.[`${host}:${p}`] && !status.AllowFunnel?.[`${host}:${p}`]);
         if (!httpsPort) throw fail('All eight private preview slots are in use. Remove an old preview on the controller before adding another.');
-        record = {machineId:machine.id,port:target.port,httpsPort,localPort:19044+httpsPort-8444};
+        record = {id:randomUUID(),machineId:machine.id,port:target.port,httpsPort,localPort:19044+httpsPort-8444};
         // Persist the reservation before changing Tailscale, so retries recover it.
         this.records.push(record); this.save();
       }
@@ -108,16 +109,17 @@ export class Previews {
       if (!handlers) await this.tailscale(['serve','--bg',`--https=${record.httpsPort}`,backend]);
       const confirmed=JSON.parse((await this.tailscale(['serve','status','--json'])).stdout || '{}');
       if (confirmed.Web?.[authority]?.Handlers?.['/']?.Proxy!==backend || confirmed.AllowFunnel?.[authority]) throw fail('The private preview route could not be verified.');
-      return {url:`https://${authority}${target.suffix}`,machineName:machine.name};
+      return {id:record.id,url:`https://${authority}${target.suffix}`,machineName:machine.name};
     });
   }
   list() {
     const host = new URL(this.config.publicURL).hostname;
-    return { previews: this.records.map(r => ({ id: r.httpsPort, url: `https://${host}:${r.httpsPort}/`, port: r.port, machineName: this.runtime.machines?.find(m => m.id === r.machineId)?.name || r.machineId })) };
+    return { previews: this.records.map(r => ({ id: r.id, url: `https://${host}:${r.httpsPort}/`, port: r.port, machineName: this.runtime.machines?.find(m => m.id === r.machineId)?.name || r.machineId })) };
   }
-  async remove(port) {
+  async remove(id) {
     return this.runtime.locked('previews', async () => {
-      const record = this.records.find(r => r.httpsPort === port); if (!record) return { removed: true };
+      const record = this.records.find(r => r.id === id); if (!record) return { removed: true };
+      const port = record.httpsPort;
       const host = new URL(this.config.publicURL).hostname;
       const status = JSON.parse((await this.tailscale(['serve', 'status', '--json'])).stdout || '{}');
       const handlers = status.Web?.[`${host}:${port}`]?.Handlers;

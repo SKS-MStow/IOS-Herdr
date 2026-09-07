@@ -158,8 +158,8 @@ export function createApp(config, { store = new Store(config.databasePath), runt
       const opMatch = url.pathname.match(/^\/api\/operations\/([a-f0-9-]+)$/i);
       if (req.method === 'GET' && opMatch) { const result = store.operation(opMatch[1], device.id); if (!result) throw new HTTPError(404, 'This command was not recorded by the controller.', 'operation_missing'); return json(res, 200, result); }
       if (req.method === 'GET' && url.pathname === '/api/previews') return json(res, 200, previews.list());
-      const previewMatch = url.pathname.match(/^\/api\/previews\/(\d{4})$/);
-      if (req.method === 'DELETE' && previewMatch) return json(res, 200, await previews.remove(Number(previewMatch[1])));
+      const previewMatch = url.pathname.match(/^\/api\/previews\/([a-f0-9-]{36})$/);
+      if (req.method === 'DELETE' && previewMatch) return json(res, 200, await previews.remove(previewMatch[1]));
       if (req.method === 'POST' && url.pathname === '/api/previews/open') {
         limit(`preview:${device.id}`, 12);
         const body = await readJSON(req); string(body.agentId, 'agent'); string(body.url, 'preview URL', 4096);

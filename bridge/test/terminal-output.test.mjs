@@ -40,3 +40,22 @@ test('preview allocation preserves existing Tailscale routes, reuses a slot and 
   await assert.rejects(previews.open('mac/term','http://localhost:5173/'),/another service/);assert.equal(writes,1);
  } finally {rmSync(root,{recursive:true});}
 });
+
+test('a stale stop-sharing request cannot remove a later preview on the same port',async()=>{
+ const root=mkdtempSync(join(tmpdir(),'herdr-preview-identity-'));
+ const config={databasePath:join(root,'state.sqlite'),publicURL:'https://mac.tail.test.ts.net:8443'};
+ const runtime={locked:async(_,work)=>work(),resolve:async()=>({machine:{id:'mac',name:'Mac',remote:false}})};
+ const status={TCP:{},Web:{}};
+ const runner=async(_,args)=>{
+  if(args[1]==='status')return{stdout:JSON.stringify(status)};
+  if(args.at(-1)==='off'){delete status.TCP[8444];delete status.Web['mac.tail.test.ts.net:8444'];}
+  else{status.TCP[8444]={HTTPS:true};status.Web['mac.tail.test.ts.net:8444']={Handlers:{'/':{Proxy:args.at(-1)}}};}
+  return {stdout:''};
+ };
+ try{
+  const previews=new Previews(config,runtime,runner);previews.reachable=async()=>{};previews.relay=async()=>{};
+  const first=await previews.open('mac/term','http://localhost:5173/');await previews.remove(first.id);
+  const next=await previews.open('mac/term','http://localhost:5174/');assert.notEqual(next.id,first.id);
+  await previews.remove(first.id);assert.equal(previews.list().previews[0].id,next.id);assert.ok(status.TCP[8444]);
+ }finally{rmSync(root,{recursive:true});}
+});

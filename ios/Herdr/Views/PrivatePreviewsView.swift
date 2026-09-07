@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct SavedPreview: Decodable, Identifiable { let id: Int; let url: String; let port: Int; let machineName: String }
+struct SavedPreview: Decodable, Identifiable { let id: String; let url: String; let port: Int; let machineName: String }
 struct SavedPreviews: Decodable { let previews: [SavedPreview] }
 struct PrivatePreviewsView: View {
     @EnvironmentObject private var model: AppModel
